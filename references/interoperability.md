@@ -17,15 +17,18 @@ For a worker using unlazy, the APM work unit must include:
 
 ```markdown
 OUTPUT: completed artifact plus the leaf GATES.md
+NORM: exact leaf acceptance gates and completion boundary
+BUDGET: agreed time, token, tool, or retry ceiling
 INSPECTION: inspect the artifact and re-run every runnable leaf gate
 PROOF: current unlazy evidence plus manager re-verification
+REPORT: APM WORK REPORT containing outputs, unfinished work, proof, changes, account, assumptions, risks, and manager decisions
 ```
 
 The worker writes gates before implementation, inspects every command before approval, and returns the artifact with its gate ledger. The manager must not accept a checked box or old evidence as completion.
 
 ## Return Sequence
 
-1. Worker returns the artifact, `GATES.md`, decisive output, and any abandonment.
+1. Worker returns the artifact, `GATES.md`, decisive output, and an APM work report including unfinished work and its norm-versus-actual account.
 2. Manager moves the work unit from `IN-FLIGHT` to `VERIFYING`.
 3. Manager reads every inherited check and script before execution.
 4. Manager re-runs runnable gates with unlazy's `--reverify` mode when available.

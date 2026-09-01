@@ -21,6 +21,7 @@ Requirements:
 ```bash
 npm run eval
 npm run eval:codex
+npm run test:recorded
 ```
 
 Optional controls:
@@ -34,6 +35,8 @@ node scripts/run-evals.mjs --verify
 
 Environment variables `APM_EVAL_RUNTIME`, `APM_EVAL_MODEL`, `APM_EVAL_JUDGE_MODEL`, `APM_EVAL_MAX_BUDGET_USD`, `APM_EVAL_CLAUDE`, and `APM_EVAL_CODEX` provide the same overrides.
 
+`npm test` validates repository, skill, and evaluation-fixture structure without rewriting historical results. `npm run test:recorded` additionally requires `evals/results/latest.json` to match the current `SKILL.md` and manager suite byte-for-byte. It is expected to fail after a skill or suite revision until a new controlled run replaces the recorded result; do not update stored hashes without running the models.
+
 ## Interpretation
 
 This is a prompt-level skill evaluation, not a benchmark of an executed multi-agent system. It does not reproduce Tran and Kiela's equal-thinking-token study or CooperBench. A single run is evidence about these prompts and model versions, not a universal effect size. Re-run after material skill changes and compare raw artifacts, not only aggregate scores.
@@ -45,3 +48,7 @@ This is a prompt-level skill evaluation, not a benchmark of an executed multi-ag
 [`CLAUDE-REPRODUCTION.md`](CLAUDE-REPRODUCTION.md) records an informal in-session reproduction using Claude Sonnet subagents as target and blinded judge. Its raw data is stored in [`results/2026-09-01-claude-sonnet-informal.json`](results/2026-09-01-claude-sonnet-informal.json).
 
 Keep this result separate from official harness output. The reproduction inherited Claude Code's default system prompt and user context, did not pin effort or a per-call cost ceiling, and consists of one six-case run with one judge. It is useful as cross-model corroboration, not as a directly interchangeable benchmark result.
+
+## Trigger Evaluation Set
+
+[`trigger-evals.json`](trigger-evals.json) separates practical phrases that should load APM from unrelated uses of words such as `owner`, `worker`, `responsibility`, and `parallel`. The positive cases deliberately avoid relying on the skill name. Use this set with a Claude skill-description trigger evaluation after changing the frontmatter description; repository validation checks the fixture shape but does not pretend to simulate Claude's native skill router.

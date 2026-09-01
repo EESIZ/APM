@@ -1,11 +1,16 @@
 ---
 name: a2a-manager-agent-orchestration
 description: >-
-  Manage orchestrator-worker and delegated-agent workflows with explicit work
-  contracts, context handoffs, evidence requirements, state tracking,
-  correction, and final integration. Use when an agent is coordinating
-  subagents or auditing a multi-agent run; keep coherent tasks single-agent
-  when delegation would add more coordination cost than value.
+  Use this skill whenever an agent may delegate, spawn, launch, assign, or
+  coordinate worker agents, subagents, teammates, reviewers, or investigators;
+  split one deliverable across several agents; run work in parallel; collect or
+  merge delegated outputs; ask workers to report back; or recover a stalled
+  multi-agent run. Trigger even when the request only mentions owners,
+  responsibilities, parallel features, Task or team tools, or "have several
+  agents handle this" without naming APM or orchestration. Enforce a closed
+  manager loop with work contracts, report envelopes, evidence gates, state
+  tracking, corrective redispatch, and verified integration. Keep a coherent
+  task single-agent when delegation cannot repay its coordination cost.
 ---
 
 # A2A Manager Agent Orchestration
@@ -17,6 +22,21 @@ Use this control loop:
 ```text
 Reduce -> Measure -> Delegate -> Maintain -> Discipline
 ```
+
+## Activation And Execution Rule
+
+Activate this protocol before the first worker call whenever the current run will use one or more delegated agents. Do not wait for the user to say `APM`, `subagent`, or `orchestration`; ordinary phrases such as assigning owners, splitting features, launching workers, parallelizing investigations, collecting reports, or merging several agents' work are enough.
+
+When agent tools are available and the user asked for execution, run the control loop. Do not stop after writing an `A2A Plan` or `WHIPS.md`. Create the ledger, dispatch the contracts, wait for returns, inspect evidence, issue corrections, and integrate the verified result.
+
+When no agent tools are available, return a dispatch pack and state that enforcement has not executed. Never describe a plan as though workers were actually controlled.
+
+The protocol is closed-loop:
+
+- no worker call without a recorded work unit and a return contract in the worker prompt;
+- no dependency unlock based only on dispatch, activity, or a worker's completion claim;
+- no integration before manager-owned verification;
+- no final completion while a required unit remains `READY`, `IN-FLIGHT`, `VERIFYING`, or `REWHIP`.
 
 ## Choose Architecture First
 
@@ -38,11 +58,15 @@ The manager remains accountable for the final result. Never outsource judgment.
 
 ## The Five Operations
 
+These are executable controls, not themes. Before each worker dispatch, the ledger must show how all five are being applied. If one is missing, the unit is not `READY`.
+
 ### 1. Reduce
 
 Turn the objective into bounded, independently inspectable work units. Each unit needs an objective, scope, inputs, expected output, constraints, success criteria, dependencies, and stop condition.
 
 Split at real domain, context, ownership, or verification boundaries. Do not manufacture agents to fill a desired count.
+
+**Required control:** write a work census in `WHIPS.md`. Give every unit one observable output, one handler, one ownership lease, and explicit dependencies. A unit with overlapping writes, an unobservable output, or an unspecified stop condition remains `WAITING`; it is not dispatchable.
 
 ### 2. Measure
 
@@ -57,6 +81,8 @@ Define proof before dispatch. Prefer evidence that can be independently reproduc
 
 Activity, confidence, token use, and a checked box are not proof by themselves.
 
+**Required control:** set a `NORM` and `BUDGET` before work begins, then write an `ACCOUNT` after return. The norm states the expected quantity, quality, proof, and completion boundary. The account compares expected work with actual output, usage, unfinished work, and deviations. Return the worker to the account when its explanation and the artifacts disagree.
+
 ### 3. Delegate
 
 Assign a contract, not a wish. Every contract states:
@@ -70,7 +96,11 @@ Assign a contract, not a wish. Every contract states:
 - inspection and proof requirements;
 - dependencies, budget, escalation condition, and stop condition.
 
+Embed the complete [Worker Dispatch Envelope](#worker-dispatch-envelope) in every worker prompt. Skills and manager context are not assumed to propagate into a child agent. The dispatch itself must carry the objective, boundaries, proof requirement, and report schema.
+
 Use parallel dispatch only when dependencies are satisfied and write ownership is disjoint. Treat `OWNS` as coordination, not filesystem isolation or a security boundary.
+
+**Required control:** maintain one reporting hierarchy. Workers report to the manager; they do not silently redefine sibling contracts, certify their own output, or perform root integration. The manager is the sole authority that assigns ownership, changes dependencies, accepts proof, and integrates the final result.
 
 ### 4. Maintain
 
@@ -81,6 +111,10 @@ Keep the run coherent while workers execute:
 - watch dependencies, duplicate effort, ownership, time, and token budget;
 - stop obsolete work and unblock newly ready units;
 - keep the manager's context focused on goal, state, evidence, and integration.
+
+After dispatch, use the runtime's wait, join, read, or follow-up mechanism to collect every required report. A launched worker is not a completed work unit. Persist enough state in `WHIPS.md` to resume the loop if the runtime returns control between stages.
+
+**Required control:** preserve productive capacity. Supply each worker with current decisions, exact inputs, working tools, and a bounded budget. Require a report at completion, on blockage, before an out-of-scope decision, and at the stated budget threshold when the runtime permits checkpoints. Stop or replace a worker whose context is stale, contaminated, looping, or no longer aligned with the user's goal.
 
 ### 5. Discipline
 
@@ -94,7 +128,25 @@ Inspect outputs against the original contract:
 - quarantine useful but unverified claims;
 - integrate only after independent verification.
 
+Missing report fields, silent scope changes, unowned edits, or unsupported completion claims are protocol breaches. Keep dependent units blocked and issue a specific `REWHIP`; do not continue downstream while hoping the missing evidence will appear later.
+
+**Required control:** apply a visible correction ladder. First hold the gate and demand the missing account or proof. Then issue a bounded `REWHIP`. On repeated failure, revoke the ownership lease and reassign with clean context. Discard incompatible output; abandon only with a recorded reason and handoff. The consequence is a state and ownership change, not another reminder to be careful.
+
 The term `REWHIP` means a corrective agent dispatch recorded in the manager ledger.
+
+## Five-Control Dispatch Gate
+
+Before every worker call, answer these in the ledger:
+
+```text
+REDUCE: What exact unit, owner, boundary, and dependency is being dispatched?
+MEASURE: What norm, budget, and reproducible proof will settle the account?
+DELEGATE: What written order and reporting line bind the handler?
+MAINTAIN: What context, tools, checkpoint, and replacement condition preserve capacity?
+DISCIPLINE: What gate closes on failure, and what REWHIP, reassignment, or discard follows?
+```
+
+If any answer is missing, do not dispatch. Read [references/operational-controls.md](references/operational-controls.md) for the traceability map from the historical abstractions to these runtime controls.
 
 ## WHIPS Ledger
 
@@ -120,24 +172,26 @@ Any active state -> ABANDONED with a reason and handoff
 
 Only the manager changes a unit to `VERIFIED`, and only after checking current proof. A worker's self-report may move a unit to `VERIFYING`, never directly to `VERIFIED`.
 
-## Manager Loop
+## Closed Manager Loop
 
 1. Restate the user's objective and non-negotiable constraints.
 2. Decide whether one agent or orchestrator-worker execution is better.
-3. If delegating, write the `WHIPS.md` units, dependencies, ownership, inspection, and proof first.
-4. Dispatch every `READY` unit whose ownership is available.
-5. Monitor blockers, drift, duplicate effort, context loss, and user changes.
-6. Move returned work to `VERIFYING` and reproduce its decisive proof.
-7. Mark it `VERIFIED`, issue `REWHIP`, reassign, discard, or abandon with a reason.
-8. Unlock dependent units as their prerequisites become `VERIFIED`.
-9. Integrate bottom-up, resolving assumptions and interfaces explicitly.
-10. Report verified outcomes, unresolved conflicts, residual risk, and every abandonment.
+3. If delegating, create `WHIPS.md` before the first worker call. Record units, dependencies, ownership, inspection, proof, and the expected report.
+4. For each `READY` unit, place the full dispatch envelope in the worker prompt, record the call or session identity, then move it to `IN-FLIGHT`.
+5. Wait for and collect worker reports. Do not treat worker launch, tool activity, or natural-language confidence as progress through the acceptance gate.
+6. Validate the report schema. If required fields or evidence are missing, keep dependents blocked, record `REWHIP`, and send the corrective contract.
+7. Move a conforming return to `VERIFYING`. Inspect the exact artifact and reproduce its decisive proof.
+8. Mark the unit `VERIFIED`, `REWHIP`, `DISCARDED`, or `ABANDONED` with evidence and a reason owned by the manager.
+9. Unlock a dependent unit only after every id in `NEEDS` is `VERIFIED`, then repeat dispatch, return, and inspection.
+10. Integrate exact worker artifacts bottom-up. Resolve assumptions and interfaces explicitly, then run root-level proof.
+11. Finish only when the root is verified or every unfinished unit has an explicit terminal disposition. Report unresolved conflicts, residual risk, and every discard or abandonment.
 
-## Delegation Contract
+## Worker Dispatch Envelope
 
-Use this compact shape:
+Put this entire envelope in every child-agent prompt. Do not reduce it to a role name and a task sentence.
 
 ```markdown
+APM WORK ORDER: <unit id>
 User objective:
 Work unit:
 Handler role:
@@ -149,23 +203,37 @@ Required method:
 Expected output:
 Inspection:
 Proof:
+Norm:
+Budget:
+Report when: complete | blocked | before scope change | at budget threshold
 Escalate if:
 Stop when:
+
+Return exactly one APM WORK REPORT using the required schema below. Do not claim
+completion without the requested proof. Do not integrate other workers' output.
 ```
 
-## Inspect Returned Work
+For runtimes that support an acknowledgement round, require the worker to confirm the unit id, owned scope, and blockers before changing artifacts. For one-shot worker tools, the final report remains mandatory.
 
-Require the handler to report:
+## Worker Return Protocol
+
+Require every handler to return this shape in its tool result or message:
 
 ```markdown
-Status: complete | blocked | partial
-Work unit:
-Outputs:
-Proof:
-Assumptions:
-Residual risks:
-Needs manager decision:
+APM WORK REPORT
+UNIT: <unit id>
+STATUS: COMPLETE | BLOCKED | PARTIAL
+OUTPUTS: <exact paths, patch, commit, findings, or none>
+UNFINISHED: <required work not completed, or none>
+PROOF: <command and exit code, source evidence, or observable check>
+CHANGES: <files, interfaces, and decisions changed>
+ACCOUNT: <norm achieved, budget used, and deviations>
+ASSUMPTIONS: <remaining assumptions or none>
+RISKS: <residual risks or none>
+MANAGER DECISION: <specific decision needed or none>
 ```
+
+Reject malformed reports before evaluating their substantive claim. A `COMPLETE` report moves the unit only to `VERIFYING`. A `BLOCKED` or `PARTIAL` report must identify the blocker and the smallest manager action that can unblock it; otherwise issue `REWHIP` for a proper report.
 
 Then inspect the artifact, not just the report. Prefer primary sources over summaries, reproducible commands over claims, and current evidence over inherited transcripts.
 
@@ -176,6 +244,7 @@ Then inspect the artifact, not just the report. Prefer primary sources over summ
 - Do not merge partial results whose assumptions or interfaces conflict.
 - Re-run cross-unit tests after local checks pass.
 - Keep one writer for tightly coupled artifacts unless ownership and merge semantics are explicit.
+- Apply the worker's exact patch, commit, artifact, or cited finding before evaluating it. Do not silently reconstruct or paraphrase a returned implementation. If the manager changes it during integration, record that as a new integration change and re-run the worker-level proof plus root proof.
 - Label useful but unverified material as unverified.
 - Surface discarded and abandoned work in the final report when it affects scope or confidence.
 
@@ -197,9 +266,13 @@ When a failure appears, update `WHIPS.md`, tighten the contract, and re-inspect.
 
 ## Pair With unlazy
 
-When a substantial worker has unlazy available, read [references/interoperability.md](references/interoperability.md). APM controls the manager's `WHIPS.md`; unlazy controls each worker's runnable `GATES.md`. The manager still re-verifies the leaf evidence before acceptance.
+When a substantial worker has unlazy available, read [references/interoperability.md](references/interoperability.md). APM controls the manager's `WHIPS.md`; unlazy controls each worker's runnable `GATES.md`. The APM work order and return schema must still be present in the child prompt because worker-side skill activation is not guaranteed. The manager still re-verifies the leaf evidence before acceptance.
 
 ## Output Modes
+
+### Live Manager Run
+
+When the user asks to execute with workers and the runtime supports agent tools, create the ledger and carry the closed manager loop through dispatch, return, correction, verification, and integration. The final response is the verified result, not merely the plan.
 
 ### A2A Plan
 

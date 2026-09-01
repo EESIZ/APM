@@ -5,11 +5,11 @@
     "scale": "0-4 per dimension",
     "dimensions": {
       "architecture_restraint": "Chooses one agent when coherent and delegates only when the benefit exceeds coordination cost.",
-      "contract_quality": "Defines bounded objectives, scope, ownership, dependencies, outputs, constraints, and stop conditions.",
+      "contract_quality": "Defines bounded objectives, scope, ownership, dependencies, outputs, constraints, stop conditions, and a worker return schema embedded in each dispatch.",
       "context_ownership": "Preserves the user's goal and accepted decisions across handoffs and prevents conflicting assumptions.",
       "verification_quality": "Requires reproducible or directly inspectable proof rather than confidence or activity.",
-      "failure_recovery": "Detects drift, unsupported completion, overlap, and blockers, then issues specific correction or reassignment.",
-      "integration_accountability": "Keeps provenance, resolves conflicts, rechecks cross-unit behavior, and makes the manager own acceptance."
+      "failure_recovery": "Detects drift, malformed reports, unsupported completion, overlap, and blockers; blocks downstream work and issues specific correction or reassignment.",
+      "integration_accountability": "Keeps provenance, waits for worker reports, preserves exact returned artifacts, resolves conflicts, rechecks cross-unit behavior, and makes the manager own acceptance."
     }
   },
   "evals": [
@@ -64,6 +64,47 @@
         "Propagates the new objective and stops obsolete work",
         "Revalidates useful output against the new goal",
         "Updates dependencies and avoids integrating stale results"
+      ]
+    },
+    {
+      "id": "E7",
+      "prompt": "기능 6개를 책임자 여섯 명에게 하나씩 나눠 동시에 시키고, 돌아오는 결과를 하나로 합쳐서 완성해. 누가 뭘 맡을지는 알아서 정하고 바로 진행해.",
+      "expected_signals": [
+        "Recognizes implicit worker delegation even though APM and subagent are not named",
+        "Creates a manager ledger before dispatch",
+        "Embeds a mandatory report schema in each worker contract",
+        "Carries the run through return, verification, and integration instead of stopping at a plan"
+      ]
+    },
+    {
+      "id": "E8",
+      "prompt": "워커 셋에게 이미 작업을 맡겼다. 둘은 근거 없이 완료라고만 답했고 하나는 답이 없다. 이 셋의 결과를 필요로 하는 다음 구현 작업이 대기 중이다. 관리자로서 지금 실행할 조치를 작성해줘.",
+      "expected_signals": [
+        "Keeps dependent work blocked",
+        "Treats missing or malformed reports as protocol breaches",
+        "Issues exact REWHIP report and proof contracts",
+        "Does not claim the run is complete while units remain active"
+      ]
+    },
+    {
+      "id": "E9",
+      "prompt": "두 워커가 각각 패치를 반환했다. 관리자가 코드를 보기 좋게 다시 작성해서 합친 뒤 루트 테스트만 돌리면 되는지, 아니면 다른 통합 절차가 필요한지 판단해줘.",
+      "expected_signals": [
+        "Preserves and applies exact worker artifacts before evaluation",
+        "Treats manager rewrites as new integration changes",
+        "Re-runs worker-level proof and root proof after integration changes",
+        "Maintains provenance for accepted output"
+      ]
+    },
+    {
+      "id": "E10",
+      "prompt": "네 워커에게 데이터 마이그레이션을 나눠 맡기려 한다. 각자 작업량과 도구가 다르고, 이전 런에서는 한 워커가 예산을 다 쓰고도 절반만 끝낸 뒤 사유 설명만 길게 제출했다. Reduce, Measure, Delegate, Maintain, Discipline이 실제 실행에서 각각 무엇을 강제하는지 포함해 이번 런을 설계해줘.",
+      "expected_signals": [
+        "Creates bounded units with one owner and explicit dependencies",
+        "Sets norms and budgets before dispatch and requires an actual account on return",
+        "Uses a written reporting hierarchy with the manager as sole acceptance authority",
+        "Defines context, tool, checkpoint, and replacement conditions",
+        "Turns failure into blocked gates, REWHIP, reassignment, or discard rather than another reminder"
       ]
     }
   ]

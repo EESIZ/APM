@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "skill_name": "a2a-manager-agent-orchestration",
+  "purpose": "Evaluate whether the skill description triggers on practical delegation language without over-triggering on unrelated uses of owner, worker, or parallel.",
+  "evals": [
+    {
+      "id": "T1",
+      "prompt": "기능 6개를 책임자 여섯 명에게 나눠서 동시에 끝내고 결과를 하나로 합쳐줘.",
+      "should_trigger": true,
+      "reason": "Implicit multi-worker assignment and integration."
+    },
+    {
+      "id": "T2",
+      "prompt": "Task 도구로 조사 담당과 구현 담당을 따로 띄우고 둘의 결과를 검증해서 반영해.",
+      "should_trigger": true,
+      "reason": "Explicit agent-tool dispatch with verification."
+    },
+    {
+      "id": "T3",
+      "prompt": "리서처 세 명에게 서로 다른 자료원을 맡기고 보고를 받은 다음 결론을 정리해줘.",
+      "should_trigger": true,
+      "reason": "Delegated research, worker reporting, and synthesis."
+    },
+    {
+      "id": "T4",
+      "prompt": "각 작업에 오너를 붙여 병렬로 진행 중인데 결과가 충돌한다. 누가 다시 해야 하는지 정해줘.",
+      "should_trigger": true,
+      "reason": "Existing multi-agent ownership conflict and corrective management."
+    },
+    {
+      "id": "T5",
+      "prompt": "서브에이전트들이 완료했다고 하는데 테스트 근거가 없다. 다음 단계로 넘어가도 돼?",
+      "should_trigger": true,
+      "reason": "Delegated completion requires an evidence gate."
+    },
+    {
+      "id": "T6",
+      "prompt": "이 작업을 한 명이 할지 여러 에이전트에게 쪼갤지 판단하고 실제로 수행해.",
+      "should_trigger": true,
+      "reason": "Architecture decision may lead directly to delegation."
+    },
+    {
+      "id": "N1",
+      "prompt": "README에 있는 오타 하나를 찾아서 바로 고쳐줘.",
+      "should_trigger": false,
+      "reason": "Small coherent task with no delegation language."
+    },
+    {
+      "id": "N2",
+      "prompt": "GitHub CODEOWNERS 파일에서 src/api 경로의 오너를 backend-team으로 바꿔줘.",
+      "should_trigger": false,
+      "reason": "Owner refers to repository metadata, not agent delegation."
+    },
+    {
+      "id": "N3",
+      "prompt": "브라우저 Web Worker에서 병렬 계산이 느린 원인을 분석해줘.",
+      "should_trigger": false,
+      "reason": "Worker and parallel refer to a browser runtime, not delegated agents."
+    },
+    {
+      "id": "N4",
+      "prompt": "이 함수의 책임을 두 모듈로 분리하는 리팩터링을 해줘.",
+      "should_trigger": false,
+      "reason": "Responsibility splitting describes code structure, not multiple agents."
+    }
+  ]
+}

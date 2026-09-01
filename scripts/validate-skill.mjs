@@ -31,10 +31,30 @@ if (!descriptionLines.length || descriptionLines.some((line) => line && !/^\s{2,
   fail("description block is not consistently indented");
 }
 
+const description = descriptionLines.map((line) => line.trim()).join(" ");
+const requiredDescriptionText = [
+  "worker agents",
+  "split one deliverable",
+  "report back",
+  "Task or team tools",
+  "without naming APM"
+];
+for (const text of requiredDescriptionText) {
+  if (!description.includes(text)) fail(`description is missing trigger language: ${text}`);
+}
+
 const requiredSkillText = [
   "## Choose Architecture First",
+  "## Activation And Execution Rule",
+  "## Five-Control Dispatch Gate",
   "## WHIPS Ledger",
   "Only the manager changes a unit to `VERIFIED`",
+  "## Worker Dispatch Envelope",
+  "## Worker Return Protocol",
+  "APM WORK REPORT",
+  "Return the worker to the account",
+  "visible correction ladder",
+  "no final completion while a required unit remains",
   "## Pair With unlazy",
   "## Failure Modes",
   "architecture choice"
@@ -51,7 +71,7 @@ for (const state of states) {
   if (!whips.includes(state)) fail(`WHIPS.md is missing state ${state}`);
 }
 
-const fields = ["HANDLER:", "NEEDS:", "OWNS:", "INPUTS:", "OUTPUT:", "INSPECTION:", "PROOF:", "STATE:", "EVIDENCE:"];
+const fields = ["HANDLER:", "NEEDS:", "OWNS:", "INPUTS:", "OUTPUT:", "NORM:", "BUDGET:", "INSPECTION:", "PROOF:", "DISPATCH:", "REPORT:", "ACCOUNT:", "STATE:", "EVIDENCE:"];
 for (const field of fields) {
   if (!template.includes(field)) fail(`WHIPS template is missing ${field}`);
 }
@@ -63,6 +83,7 @@ const markdownFiles = [
   "references/interoperability.md",
   "references/research.md",
   "references/history.md",
+  "references/operational-controls.md",
   "references/origin.md",
   "references/launch.md",
   "evals/README.md"

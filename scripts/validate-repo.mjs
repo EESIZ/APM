@@ -24,9 +24,11 @@ const requiredFiles = [
   "references/interoperability.md",
   "references/research.md",
   "references/history.md",
+  "references/operational-controls.md",
   "references/origin.md",
   "references/launch.md",
   "evals/evals.json",
+  "evals/trigger-evals.json",
   "evals/README.md",
   "package.json"
 ];
@@ -62,10 +64,16 @@ if (/Stanford.{0,80}equal.{0,40}token/is.test(readme)) {
 
 const packageJson = JSON.parse(read("package.json"));
 if (packageJson.license !== "MIT") fail("package.json license is not MIT");
-if (!packageJson.scripts?.test || !packageJson.scripts?.eval) fail("package scripts are incomplete");
+if (!packageJson.scripts?.test || !packageJson.scripts?.["test:recorded"] || !packageJson.scripts?.eval) fail("package scripts are incomplete");
 
 const evals = JSON.parse(read("evals/evals.json"));
-if (!Array.isArray(evals.evals) || evals.evals.length < 6) fail("evaluation suite is too small");
+if (!Array.isArray(evals.evals) || evals.evals.length < 10) fail("evaluation suite is too small");
 if (Object.keys(evals.rubric?.dimensions ?? {}).length !== 6) fail("evaluation rubric must have six dimensions");
+
+const triggerEvals = JSON.parse(read("evals/trigger-evals.json"));
+if (!Array.isArray(triggerEvals.evals) || triggerEvals.evals.length < 10) fail("trigger evaluation suite is too small");
+if (!triggerEvals.evals.some((item) => item.should_trigger === true)) fail("trigger suite has no positive cases");
+if (!triggerEvals.evals.some((item) => item.should_trigger === false)) fail("trigger suite has no negative cases");
+if (new Set(triggerEvals.evals.map((item) => item.id)).size !== triggerEvals.evals.length) fail("trigger suite ids are not unique");
 
 console.log("repository validation passed");
