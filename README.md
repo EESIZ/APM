@@ -89,7 +89,17 @@ Latest controlled run (2026-09-01, Codex `gpt-5.4-mini`, six cases, blinded same
 | APM | 130/144 | 90.3% |
 | Delta | +26 | +18.1 pp |
 
-This is one prompt-level run, not a universal effect size. The [summary](evals/RESULTS.md) and [raw result](evals/results/latest.json) are committed for inspection and reruns.
+An informal Claude Code reproduction used Claude Sonnet subagents as both target and blinded judge:
+
+| Condition | Codex controlled run | Claude informal reproduction |
+| --- | ---: | ---: |
+| No skill | 104/144 (72.2%) | 106/144 (73.6%) |
+| APM | 130/144 (90.3%) | 130/144 (90.3%) |
+| Delta | +26 (+18.1 pp) | +24 (+16.7 pp) |
+
+The APM condition reached the same `130/144` total in both model environments while the baselines differed by two points. The largest Claude-side gains appeared in disagreement resolution, overlapping-work arbitration, and goal-change handling. The Claude result is corroborating evidence, not a second controlled harness run: it inherited Claude Code system and user context, did not pin effort or cost, and used one run with one judge.
+
+This remains prompt-level evidence, not a universal effect size. The [controlled-run summary](evals/RESULTS.md), [Claude reproduction report](evals/CLAUDE-REPRODUCTION.md), and [raw artifacts](evals/results/) are committed for inspection and reruns.
 
 ## Historical Origin
 

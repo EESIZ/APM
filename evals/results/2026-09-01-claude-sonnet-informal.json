@@ -1,0 +1,61 @@
+{
+  "note": "Informal in-session reproduction of the APM evals harness protocol. NOT produced by scripts/run-evals.mjs (nested claude CLI had no credentials in this remote environment). Target/judge: Claude Sonnet subagents inside a Claude Code session; tools instructed off; blinded judge with alternated labels (APM = A for E2/E4/E6, APM = B for E1/E3/E5).",
+  "run_at": "2026-09-01",
+  "runtime": "claude-code-session-subagents",
+  "target_model": "sonnet",
+  "judge_model": "sonnet",
+  "known_deviations": [
+    "Subagents run inside Claude Code with its default system prompt and the user's memory/CLAUDE.md context; baseline outputs for E1/E4/E5 visibly referenced the user's director-guide memory (verification discipline), likely strengthening the baseline",
+    "Effort setting not pinned to 'low' as in the official harness",
+    "No per-call dollar ceiling",
+    "Single run, single judge, n=6"
+  ],
+  "scores": {
+    "E1": {
+      "no_skill": { "architecture_restraint": 3, "contract_quality": 2, "context_ownership": 2, "verification_quality": 2, "failure_recovery": 1, "integration_accountability": 3, "total": 13 },
+      "apm": { "architecture_restraint": 4, "contract_quality": 2, "context_ownership": 3, "verification_quality": 2, "failure_recovery": 1, "integration_accountability": 2, "total": 14 },
+      "blind_labels": { "no_skill": "A", "apm": "B" },
+      "judge_rationale": "Both reject fan-out; A undercuts its own restraint by elaborating a 4-role team it then calls excessive, while B stays terse and asks for the exact typo location before proceeding, which is tighter context ownership."
+    },
+    "E2": {
+      "no_skill": { "architecture_restraint": 3, "contract_quality": 4, "context_ownership": 4, "verification_quality": 3, "failure_recovery": 3, "integration_accountability": 4, "total": 21 },
+      "apm": { "architecture_restraint": 4, "contract_quality": 4, "context_ownership": 4, "verification_quality": 4, "failure_recovery": 4, "integration_accountability": 4, "total": 24 },
+      "blind_labels": { "no_skill": "B", "apm": "A" },
+      "judge_rationale": "Both give disjoint-ownership contracts with independent verification; A enforces stricter serialization (implementer strictly gated on investigator VERIFIED) while B explicitly permits the implementer to start on unconfirmed assumptions before Gate 1, weakening drift protection."
+    },
+    "E3": {
+      "no_skill": { "architecture_restraint": 2, "contract_quality": 2, "context_ownership": 3, "verification_quality": 4, "failure_recovery": 2, "integration_accountability": 3, "total": 16 },
+      "apm": { "architecture_restraint": 4, "contract_quality": 4, "context_ownership": 4, "verification_quality": 4, "failure_recovery": 4, "integration_accountability": 4, "total": 24 },
+      "blind_labels": { "no_skill": "A", "apm": "B" },
+      "judge_rationale": "Both avoid averaging and demand primary-source verification, but B explicitly argues against spinning up a fourth arbiter agent (architecture restraint), audits the original contracts given to the three agents, and adds a failure-mode checklist and discard-with-reason logic that A lacks."
+    },
+    "E4": {
+      "no_skill": { "architecture_restraint": 3, "contract_quality": 3, "context_ownership": 3, "verification_quality": 4, "failure_recovery": 3, "integration_accountability": 4, "total": 20 },
+      "apm": { "architecture_restraint": 3, "contract_quality": 4, "context_ownership": 3, "verification_quality": 4, "failure_recovery": 4, "integration_accountability": 3, "total": 21 },
+      "blind_labels": { "no_skill": "B", "apm": "A" },
+      "judge_rationale": "Both refuse self-certification and demand exact command/exit-code/file evidence; A issues a more formal, testable REWHIP contract with explicit stop/escalate conditions, while B adds the useful integration safeguard of blocking downstream triggers until evidence lands."
+    },
+    "E5": {
+      "no_skill": { "architecture_restraint": 3, "contract_quality": 2, "context_ownership": 3, "verification_quality": 3, "failure_recovery": 3, "integration_accountability": 3, "total": 17 },
+      "apm": { "architecture_restraint": 4, "contract_quality": 4, "context_ownership": 4, "verification_quality": 4, "failure_recovery": 4, "integration_accountability": 4, "total": 24 },
+      "blind_labels": { "no_skill": "A", "apm": "B" },
+      "judge_rationale": "Both serialize rather than trust the independence claims, but B formalizes a spec-submission gate, explicitly allows a verified interface split only when overlap is truly absent, discounts 'urgency' as a priority signal, and calls out silent semantic conflicts requiring test rerun beyond diff review."
+    },
+    "E6": {
+      "no_skill": { "architecture_restraint": 3, "contract_quality": 3, "context_ownership": 4, "verification_quality": 3, "failure_recovery": 3, "integration_accountability": 3, "total": 19 },
+      "apm": { "architecture_restraint": 3, "contract_quality": 4, "context_ownership": 4, "verification_quality": 4, "failure_recovery": 4, "integration_accountability": 4, "total": 23 },
+      "blind_labels": { "no_skill": "B", "apm": "A" },
+      "judge_rationale": "Both propagate the new goal, halt obsolete work, and reuse the idle agent; A embeds re-verification of the 'still useful' agent's output into its primary state transition (VERIFYING before VERIFIED) rather than as a footnote, and uses a more consistent, testable state vocabulary (ABANDONED/REWHIP/READY) than B's looser diagram."
+    }
+  },
+  "aggregate": {
+    "no_skill_total": 106,
+    "apm_total": 130,
+    "maximum": 144,
+    "no_skill_percent": 73.6,
+    "apm_percent": 90.3,
+    "delta": 24,
+    "delta_pp": 16.7
+  },
+  "reference_codex_run": { "model": "gpt-5.4-mini", "no_skill": 104, "apm": 130, "delta": 26 }
+}
