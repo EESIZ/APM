@@ -1,6 +1,14 @@
 ---
 name: a2a-manager-agent-orchestration
-description: Use this skill whenever Claude is acting as a manager, coordinator, supervisor, planner, or controller of subordinate agents in an A2A, multi-agent, agent-to-agent, subagent, swarm, manager-agent, orchestrator-executor, or delegated-agent workflow. This skill uses the "reduction -> measurement -> delegation -> maintenance -> discipline" control loop as an operating protocol for agent orchestration: decompose work, assign contracts, preserve context, monitor progress, verify outputs, reassign failures, and report results.
+description: >-
+  Use this skill whenever Claude is acting as a manager, coordinator,
+  supervisor, planner, or controller of subordinate agents in an A2A,
+  multi-agent, agent-to-agent, subagent, swarm, manager-agent,
+  orchestrator-executor, or delegated-agent workflow. This skill uses the
+  "reduction -> measurement -> delegation -> maintenance -> discipline"
+  control loop as an operating protocol for agent orchestration: decompose
+  work, assign contracts, preserve context, monitor progress, verify outputs,
+  reassign failures, and report results.
 ---
 
 # A2A Manager Agent Orchestration
