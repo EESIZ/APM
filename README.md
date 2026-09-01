@@ -2,6 +2,8 @@
 
 **If unlazy disciplines the worker, APM disciplines the manager.**
 
+[![Support ESIZAL on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/esizal)
+
 APM is an Agent Skill for manager-side discipline in orchestrator-worker systems. It makes delegation, context handoff, inspection, proof, correction, and integration explicit.
 
 ```text
@@ -121,6 +123,12 @@ APM은 여러 하위 AI 에이전트를 부리는 관리자 에이전트를 위�
 - `references/launch.md`: distribution order, outreach drafts, and measurement cadence.
 - `evals/`: prompts, rubric, raw results, and evaluation notes.
 - `scripts/`: zero-dependency validation and live A/B evaluation.
+
+## Support / 후원
+
+If APM helps you build more reliable agent systems, you can support its continued development on [Ko-fi](https://ko-fi.com/esizal).
+
+APM이 더 신뢰할 수 있는 에이전트 시스템을 만드는 데 도움이 되었다면 [Ko-fi](https://ko-fi.com/esizal)에서 프로젝트의 지속적인 개발을 후원할 수 있습니다.
 
 ## License
 
