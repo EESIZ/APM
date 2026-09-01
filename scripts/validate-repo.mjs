@@ -40,7 +40,7 @@ if (!license.includes("Copyright (c) 2026 EESIZ")) fail("LICENSE owner or year i
 const readme = read("README.md");
 const firstFortyLines = readme.split(/\r?\n/).slice(0, 40).join("\n");
 if (!firstFortyLines.includes("npx skills add EESIZ/APM")) fail("install command is not near the top of README");
-if (!readme.includes("If unlazy disciplines the worker, APM disciplines the manager.")) fail("positioning line is missing");
+if (!readme.includes("AI 농장주에게 바치는 중간 관리자 매뉴얼")) fail("positioning line is missing");
 if (!readme.includes("Use APM as the manager and unlazy inside each substantial leaf.")) fail("unlazy interoperability summary is missing");
 
 const researchLinks = [
