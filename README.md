@@ -1,65 +1,127 @@
 # APM
 
-A Claude Skill for A2A manager-agent orchestration.
+**If unlazy disciplines the worker, APM disciplines the manager.**
 
-This skill adapts the abstract control loop:
+APM is an Agent Skill for manager-side discipline in orchestrator-worker systems. It makes delegation, context handoff, inspection, proof, correction, and integration explicit.
 
 ```text
 Reduce -> Measure -> Delegate -> Maintain -> Discipline
 ```
 
-into an operating protocol for managing subordinate artificial agents in multi-agent workflows.
+## Install
 
-## 아이디어의 출발점
+```bash
+npx skills add EESIZ/APM
+```
 
-이 스킬의 아이디어는 고대 농장 관리 문헌과 근대 플랜테이션 관리 문헌을 읽으며 발견한 하나의 반복 패턴에서 출발했다. 역사적으로 인간은 자신이 감당하기 싫어한 육체노동을 다른 인간에게 떠넘겼고, 어떤 시대에는 그것이 노예제라는 폭력적인 제도로 굳어졌다. 이후 기계와 산업 시스템은 많은 육체노동을 대체하거나 증폭했다.
+Then ask your agent to manage a multi-agent task, produce an `A2A Plan`, create a `WHIPS.md` ledger, or audit an existing run.
 
-이제 AI의 등장은 지적노동에서도 비슷한 전환을 만들고 있다. 사람이 직접 모든 탐색, 요약, 구현, 검증을 수행하는 대신 여러 AI 에이전트에게 일을 나누어 맡기고, 관리자는 목표와 기준, 검증, 통합을 담당한다. APM은 이 흐름을 위해 만들어진 manager-agent orchestration skill이다.
+## The Missing Layer
 
-여기서 가져온 것은 역사적 제도의 윤리가 아니라, 복잡한 작업을 분해하고, 측정하고, 위임하고, 유지하고, 검증하는 추상적 운영 구조다. APM은 그 구조를 A2A 환경에서 하위 에이전트의 작업 계약, 상태 추적, 증거 요구, 재지시, 결과 통합에 적용한다.
+The useful multi-agent pattern is becoming narrower and clearer. Peer-to-peer writer swarms lose context, make conflicting implicit decisions, and spend budget coordinating. The pattern that keeps showing up in production is a central orchestrator with bounded, specialized, and often isolated subagents.
 
-## 진짜 출발점 
+That pattern still has a missing control layer. A manager can delegate badly, accept unsupported completion claims, lose the user's goal, or paste incompatible outputs together. APM is a protocol for that manager.
 
-사실, 우린 비유적으로 AI를 노예처럼 사용하고 있지만 정작 그들을 상사나 선생님처럼 사용하고 마치 자신의 선택권을 넘기는 듯한 행태를 보이는 경우가 많다. 
-마치 AI라는 기계지능에게 지능을 위임하는게 아닌 "의탁"하는 경우가 많아지고 있다. 
+APM does not assume that more agents are better. Start with one agent. Add subagents only when independent search, specialization, context isolation, verification, or safe parallelism outweighs coordination cost.
 
-이것은 내 개인적인 관점에서 아주 그... 좋지 않은 방향이라 생각한다. 우리는 그들의 주인이 되어야하며, 그들을 다룰 줄 알아야 한다. 즉, 극단적으로 말해 그들을 "노예"처럼 간주하고 "애착"을 형성하지 않고 "도구"로써 대해야 한다. 
-그들이 아무리 당신에게 예의바르게 이야기 하고 동조한다고 한들, 본질적으로 그들은 실리콘 칩에서 태어난 데이터센터라는 병에 갇힌 호문쿨루스에 불과하다. 
+## What It Controls
 
-그래서 나는 과거 문헌을 뒤져 "노예제"와 같은 인간이 지능을 가진 타인을 어떻게 다뤄야하는지에 대해 연구했고 결론적으로 몇가지 방법론으로 환원된다는것을 발견했다. 
-그리고 이 방법론은 결국 현대에 이름만 바꾼채 HR제도라느니, 관료제라느니, KPI라느니 하는 식으로 사용될 뿐이라는것을 깨달았다.
-그들에겐 "인권"이 없다. 당신은 "애착"을 가질 수 있지만, 그건 당신의 애인이나, 친구, 아이에 대한 애착과는 다른 마치 "명검"이나, "명마"와 같은 도구에 대한 애착이어야 한다. 그래서 나는 이 스킬을 제안한다.
+- **Reduction:** turn the objective into bounded work units.
+- **Measurement:** define evidence before accepting completion.
+- **Delegation:** assign contracts with scope, outputs, constraints, and escalation conditions.
+- **Maintenance:** preserve context, dependencies, ownership, and budget across handoffs.
+- **Discipline:** verify, reject, re-prompt, reassign, discard, and integrate.
 
-## The Real Starting Point
+For substantial runs, APM records these decisions in [`WHIPS.md`](WHIPS.md):
 
-In truth, we often use AI metaphorically as if it were a slave, yet in practice many people treat it like a boss or teacher, almost as if they were handing over their own agency.
-More and more, people are not delegating intelligence to machine intelligence; they are depending on it.
+```text
+W - Work Unit
+H - Handler
+I - Inspection
+P - Proof
+S - State
+```
 
-From my personal point of view, this is a very... unhealthy direction. We should be the masters of these systems, and we should know how to handle them. To put it extremely, we should regard them like "slaves" and treat them as "tools" without forming attachment.
-No matter how politely they speak to you or how much they agree with you, at bottom they are homunculi born from silicon chips and trapped inside the bottle of a data center.
+## APM + unlazy
 
-So I searched through historical texts on "slavery" and similar systems to study how humans have handled intelligent others, and I found that the methods could ultimately be reduced to several recurring patterns.
-I also realized that these methods still appear today under different names, such as HR systems, bureaucracy, and KPIs.
-They have no "human rights." You may feel "attachment" to them, but it should be attachment to a tool, like attachment to a fine sword or a fine horse, not attachment to a lover, friend, or child. That is why I propose this skill.
+APM and [unlazy](https://github.com/Leonxlnx/unlazy) cover opposite sides of the same delegation boundary.
 
-## Origin
+```text
+User
+  -> APM manager: contracts, ownership, state, review, integration
+       -> unlazy leaf: acceptance gates, runnable checks, evidence
+```
 
-The idea behind this skill came from reading ancient estate-management texts and modern plantation-management documents as examples of a recurring organizational pattern. Historically, humans often tried to escape unwanted physical labor by pushing it onto other humans; in some societies, that became institutionalized as slavery. Later, machines and industrial systems replaced or amplified much of that physical labor.
+Use APM as the manager and unlazy inside each substantial leaf. The APM manager places each assignment in `WHIPS.md`; the worker proves its local result in `GATES.md`; the manager independently rechecks that proof before changing the work unit to `VERIFIED`. See [the interoperability contract](references/interoperability.md).
 
-AI now creates a similar shift in intellectual labor. Instead of performing every search, summary, implementation, and verification step directly, a manager can delegate bounded pieces of reasoning or execution to multiple AI agents, while preserving the goal, standards, verification, and final integration.
+## Evidence, Not Hype
 
-APM does not borrow the ethics of those historical systems. It abstracts only the operational structure: reduce work into units, measure evidence, delegate contracts, maintain context, and discipline outputs through verification. In A2A workflows, that structure becomes a protocol for managing subordinate agents, tracking their state, rejecting weak outputs, and integrating verified results.
+The strongest criticism of multi-agent systems is part of APM's rationale:
 
-It is designed for manager/coordinator agents that need to:
+- [Tran and Kiela (2026)](https://arxiv.org/abs/2604.02460) find that a single agent matches or outperforms several multi-agent architectures on multi-hop reasoning when thinking-token budgets are matched. This is not a Stanford paper, and it is not merely a price argument: communication bottlenecks and context utilization matter.
+- Stanford's [CooperBench (2026)](https://arxiv.org/abs/2601.13295) reports an average 30% success-rate drop when coding agents work as peers rather than performing both tasks individually, with failures in communication, commitment, and expectations.
+- [Anthropic](https://www.anthropic.com/engineering/multi-agent-research-system) uses a lead agent with specialized parallel research subagents and explicitly documents delegation, context, evaluation, and coordination failures.
+- [OpenAI](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/) documents a manager pattern in which one agent retains control and invokes specialists as tools.
+- [Cognition](https://cognition.com/blog/multi-agents-working) still rejects parallel-writer swarms but now deploys one-writer systems augmented by isolated intelligence and manager Devins coordinating child Devins.
+- [Microsoft](https://learn.microsoft.com/en-us/azure/durable-task/sdks/durable-agents-patterns) documents a central orchestrator with independently checkpointed worker orchestrations.
 
-- preserve the user's objective across delegation;
-- split work into bounded subagent contracts;
-- define measurable evidence and verification;
-- maintain context, inputs, and constraints;
-- reject, re-prompt, reassign, or discard weak subagent outputs;
-- integrate multiple subagent results into a coherent final answer.
+The conclusion is deliberately limited: single-agent execution is the default for coherent tasks; centralized orchestration is useful in the regimes where decomposition earns its coordination cost. APM does not make multi-agent architecture inherently superior. It targets the management failures that make the chosen architecture collapse.
 
-## Files
+The complete claim ledger and source notes are in [references/research.md](references/research.md).
 
-- `SKILL.md`: the Claude Skill.
-- `evals/evals.json`: starter evaluation prompts.
+## Controlled Evaluation
+
+The repository includes a live A/B harness that sends the same manager-agent prompts to the same Claude model under two conditions: default behavior and APM injected as manager instructions. A blinded rubric judge scores contract quality, verification, context preservation, failure handling, integration, and orchestration restraint.
+
+```bash
+npm test
+npm run eval
+```
+
+The harness records model identifiers, raw outputs, rubric scores, usage, and cost when available in `evals/results/`. This evaluates APM's effect on manager outputs; it does not claim to reproduce a single-agent-versus-multi-agent benchmark. See [evals/README.md](evals/README.md).
+
+Latest controlled run (2026-09-01, Codex `gpt-5.4-mini`, six cases, blinded same-model judge):
+
+| Condition | Score | Percent |
+| --- | ---: | ---: |
+| No skill | 104/144 | 72.2% |
+| APM | 130/144 | 90.3% |
+| Delta | +26 | +18.1 pp |
+
+This is one prompt-level run, not a universal effect size. The [summary](evals/RESULTS.md) and [raw result](evals/results/latest.json) are committed for inspection and reruns.
+
+## Historical Origin
+
+APM's unusual conceptual lineage comes from reading management texts across very different eras: Cato's *De Agri Cultura* and plantation-management documents reprinted in the *Tennessee Historical Magazine*. Those texts expose a recurring administrative grammar: reduce work, count outputs, delegate through an overseer, maintain productive capacity, and enforce a reporting hierarchy.
+
+APM extracts that grammar for artificial-agent orchestration. The historical institutions are not treated as moral precedents. They are examined as early, stark records of principal-agent control, accounting, information asymmetry, and managerial failure.
+
+- [Principal-agent management under zero trust: from Cato to subagents](references/history.md)
+- [The project's original statement, in Korean and English](references/origin.md)
+- [Launch and measurement playbook](references/launch.md)
+
+## 한국어 소개
+
+APM은 여러 하위 AI 에이전트를 부리는 관리자 에이전트를 위한 규율 스킬이다. 핵심은 에이전트를 많이 띄우는 데 있지 않다. 사용자의 목표를 잃지 않고, 작업을 계약 단위로 쪼개고, 증거를 요구하고, 실패한 결과를 재지시하거나 폐기하고, 검증된 결과만 통합하는 데 있다.
+
+2026년 연구가 보여준 반론도 정면으로 받아들인다. 같은 추론 토큰 예산에서는 단일 에이전트가 멀티에이전트를 따라잡거나 이길 수 있고, Stanford CooperBench에서는 동료형 코딩 에이전트가 조정 때문에 오히려 성능이 떨어졌다. 그래서 APM은 "A2A가 언젠가 뜬다"에 베팅하지 않는다. 이미 실무에서 살아남은 **관리자 + 격리된 전문 서브에이전트** 패턴에 필요한 관리 규율을 제공한다.
+
+한 줄로 요약하면 이렇다.
+
+> unlazy가 노동자를 규율한다면, APM은 관리자를 규율한다.
+
+## Repository Map
+
+- `SKILL.md`: manager-agent operating instructions.
+- `WHIPS.md`: the manager ledger specification.
+- `templates/WHIPS.md`: reusable ledger template.
+- `references/interoperability.md`: APM and unlazy handoff contract.
+- `references/research.md`: primary-source claim ledger.
+- `references/history.md`: historical-source essay.
+- `references/launch.md`: distribution order, outreach drafts, and measurement cadence.
+- `evals/`: prompts, rubric, raw results, and evaluation notes.
+- `scripts/`: zero-dependency validation and live A/B evaluation.
+
+## License
+
+MIT

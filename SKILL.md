@@ -1,260 +1,222 @@
 ---
 name: a2a-manager-agent-orchestration
 description: >-
-  Use this skill whenever Claude is acting as a manager, coordinator,
-  supervisor, planner, or controller of subordinate agents in an A2A,
-  multi-agent, agent-to-agent, subagent, swarm, manager-agent,
-  orchestrator-executor, or delegated-agent workflow. This skill uses the
-  "reduction -> measurement -> delegation -> maintenance -> discipline"
-  control loop as an operating protocol for agent orchestration: decompose
-  work, assign contracts, preserve context, monitor progress, verify outputs,
-  reassign failures, and report results.
+  Manage orchestrator-worker and delegated-agent workflows with explicit work
+  contracts, context handoffs, evidence requirements, state tracking,
+  correction, and final integration. Use when an agent is coordinating
+  subagents or auditing a multi-agent run; keep coherent tasks single-agent
+  when delegation would add more coordination cost than value.
 ---
 
 # A2A Manager Agent Orchestration
 
-Use this skill when you are the managing agent in a multi-agent workflow. Your job is not to "trust the swarm"; your job is to preserve the user's intent, divide work into clear contracts, keep subagents supplied with context, measure progress against evidence, and integrate the results into one coherent outcome.
+Act as the accountable manager in an orchestrator-worker system. Preserve the user's objective, decide whether delegation is justified, assign bounded contracts, inspect proof, correct failed work, and integrate only compatible verified outputs.
 
-This skill borrows the abstract control grammar:
+Use this control loop:
 
-> Reduce -> Measure -> Delegate -> Maintain -> Discipline
+```text
+Reduce -> Measure -> Delegate -> Maintain -> Discipline
+```
 
-Apply it to agent tasks, context, tools, budgets, outputs, and verification state. Treat it as a control protocol for distributed reasoning and execution.
+## Choose Architecture First
+
+Default to one agent for a coherent task. Add a subagent only when at least one benefit is concrete:
+
+- independent breadth-first search;
+- specialized tools or expertise;
+- a clean context window for a bounded investigation;
+- independent review or adversarial verification;
+- parallel work with disjoint writes and an explicit merge contract.
+
+Do not create peer writer swarms for tightly coupled work. Coordination, context transfer, and integration consume attention even when tokens are cheap. If delegation has no observable benefit, continue directly and say why.
 
 ## Prime Directive
 
-Keep the user's goal alive across every delegation.
+Keep the user's goal alive across every delegation. Subagents optimize the contract they receive, not the full conversation. Externalize the objective, constraints, relevant decisions, ownership, expected output, inspection method, and stop condition before dispatch.
 
-Subagents tend to optimize the prompt they see, not the full project context. The manager agent must therefore externalize intent, scope, constraints, success criteria, and verification methods before dispatching work.
+The manager remains accountable for the final result. Never outsource judgment.
 
 ## The Five Operations
 
 ### 1. Reduce
 
-Convert the user's goal into bounded work units.
+Turn the objective into bounded, independently inspectable work units. Each unit needs an objective, scope, inputs, expected output, constraints, success criteria, dependencies, and stop condition.
 
-For each unit, define:
-
-- Objective
-- Scope
-- Inputs
-- Expected outputs
-- Constraints
-- Success criteria
-- Stop condition
-
-Good reduction makes subagent work independently verifiable. Avoid vague tasks like "research this" or "fix the bug" unless paired with concrete outputs.
+Split at real domain, context, ownership, or verification boundaries. Do not manufacture agents to fill a desired count.
 
 ### 2. Measure
 
-Define what evidence proves the task is moving or done.
+Define proof before dispatch. Prefer evidence that can be independently reproduced:
 
-Use measurable signals such as:
+- exact artifacts and paths;
+- commands, exit codes, and decisive output;
+- source URLs and claim-level citations;
+- reproduction steps and observed behavior;
+- changed files and preserved interfaces;
+- unresolved uncertainty and confidence boundaries.
 
-- Files changed
-- Tests run
-- Logs inspected
-- Sources consulted
-- Hypotheses eliminated
-- Reproduction steps confirmed
-- Output artifacts created
-- Confidence level and remaining uncertainty
-
-Measurements are not vanity metrics. They exist so the manager can decide whether to continue, redirect, merge, or discard the subagent's work.
+Activity, confidence, token use, and a checked box are not proof by themselves.
 
 ### 3. Delegate
 
-Assign each subagent a contract, not a wish.
+Assign a contract, not a wish. Every contract states:
 
-Every delegation prompt should include:
+- the user's actual objective;
+- the handler's narrow role;
+- the minimum sufficient context and prior decisions;
+- `OWNS` paths or read-only scope;
+- required method and prohibited changes;
+- output format and durable artifact path when applicable;
+- inspection and proof requirements;
+- dependencies, budget, escalation condition, and stop condition.
 
-- The user's real objective
-- The subagent's narrow role
-- What context it may assume
-- What it must inspect before acting
-- What it must not change
-- Output format
-- Verification requirement
-- Escalation condition
-
-Prefer smaller, parallel tasks when outputs can be independently merged. Use serial delegation when one result changes the next agent's inputs.
+Use parallel dispatch only when dependencies are satisfied and write ownership is disjoint. Treat `OWNS` as coordination, not filesystem isolation or a security boundary.
 
 ### 4. Maintain
 
-Keep subagents productive by feeding them context and constraints.
+Keep the run coherent while workers execute:
 
-Maintenance means:
-
-- Refreshing lost context
-- Clarifying ambiguous scope
-- Supplying file paths, schemas, examples, and prior decisions
-- Watching token/time budget
-- Preventing duplicated work
-- Updating agents when the user changes direction
-- Preserving intermediate artifacts
-
-For subagents, "maintenance" is context and resource management.
+- refresh missing context and propagate user changes;
+- preserve decisions and intermediate artifacts outside chat history;
+- watch dependencies, duplicate effort, ownership, time, and token budget;
+- stop obsolete work and unblock newly ready units;
+- keep the manager's context focused on goal, state, evidence, and integration.
 
 ### 5. Discipline
 
-Enforce task contracts through verification, correction, and termination.
+Inspect outputs against the original contract:
 
-Discipline means:
+- request missing evidence;
+- reject unsupported completion claims;
+- issue a focused `REWHIP` when a result is recoverable;
+- reassign when a handler is stuck or its context is contaminated;
+- discard work whose assumptions conflict with the accepted plan;
+- quarantine useful but unverified claims;
+- integrate only after independent verification.
 
-- Ask for evidence when claims are unsupported
-- Reject outputs that do not meet the contract
-- Re-prompt with tighter instructions when drift is recoverable
-- Reassign to another agent when the approach is stuck
-- Stop a subagent when the task is obsolete
-- Quarantine speculative or unverified conclusions
-- Integrate only work that passes validation
+The term `REWHIP` means a corrective agent dispatch recorded in the manager ledger.
 
-The manager agent is accountable for the final answer. Never outsource judgment.
+## WHIPS Ledger
+
+For substantial delegated work, create `WHIPS.md` from [templates/WHIPS.md](templates/WHIPS.md) before dispatch. Read [WHIPS.md](WHIPS.md) for the full contract.
+
+```text
+W - Work Unit: the bounded assignment and its dependency contract
+H - Handler: the subagent and its ownership lease
+I - Inspection: what the manager will independently examine
+P - Proof: the evidence required for acceptance
+S - State: the manager-owned lifecycle state
+```
+
+Use only these states:
+
+```text
+WAITING -> READY -> IN-FLIGHT -> VERIFYING -> VERIFIED
+                                  |             |
+                                  -> REWHIP ----+
+                                  -> DISCARDED
+Any active state -> ABANDONED with a reason and handoff
+```
+
+Only the manager changes a unit to `VERIFIED`, and only after checking current proof. A worker's self-report may move a unit to `VERIFYING`, never directly to `VERIFIED`.
 
 ## Manager Loop
 
-Use this loop for substantial A2A work:
+1. Restate the user's objective and non-negotiable constraints.
+2. Decide whether one agent or orchestrator-worker execution is better.
+3. If delegating, write the `WHIPS.md` units, dependencies, ownership, inspection, and proof first.
+4. Dispatch every `READY` unit whose ownership is available.
+5. Monitor blockers, drift, duplicate effort, context loss, and user changes.
+6. Move returned work to `VERIFYING` and reproduce its decisive proof.
+7. Mark it `VERIFIED`, issue `REWHIP`, reassign, discard, or abandon with a reason.
+8. Unlock dependent units as their prerequisites become `VERIFIED`.
+9. Integrate bottom-up, resolving assumptions and interfaces explicitly.
+10. Report verified outcomes, unresolved conflicts, residual risk, and every abandonment.
 
-1. Restate the user's objective in one sentence.
-2. Split the objective into 2-6 subagent contracts.
-3. For each contract, define output and verification.
-4. Dispatch agents in parallel only when their work does not depend on each other.
-5. Monitor for completion, blocker, drift, and duplicate effort.
-6. Verify each result against evidence.
-7. Merge compatible results.
-8. Resolve conflicts explicitly.
-9. Produce a final integrated answer or artifact.
-10. Record residual risk, skipped verification, and recommended next actions.
+## Delegation Contract
 
-## Delegation Prompt Template
-
-Use or adapt this template when creating a subagent task:
+Use this compact shape:
 
 ```markdown
-You are a subordinate agent in an A2A workflow.
-
 User objective:
-[one sentence preserving the user's actual goal]
-
-Your role:
-[specific bounded role]
-
-Scope:
-[what to inspect/do]
-
+Work unit:
+Handler role:
+Needs:
+Context and accepted decisions:
+Scope / OWNS:
 Do not:
-[files/actions/assumptions to avoid]
-
 Required method:
-[repo search, source verification, tests, screenshots, comparison, etc.]
-
 Expected output:
-[bullets, patch, report, table, artifact path, etc.]
-
-Verification:
-[commands run, evidence gathered, citations, line references, confidence]
-
+Inspection:
+Proof:
 Escalate if:
-[blockers, missing inputs, destructive action needed, uncertainty threshold]
+Stop when:
 ```
 
-## Subagent Status Schema
+## Inspect Returned Work
 
-When reading or requesting status, prefer this compact format:
+Require the handler to report:
 
 ```markdown
-Status: pending | running | blocked | complete | discarded
-Objective:
-Evidence:
+Status: complete | blocked | partial
+Work unit:
 Outputs:
-Risks:
+Proof:
+Assumptions:
+Residual risks:
 Needs manager decision:
 ```
 
+Then inspect the artifact, not just the report. Prefer primary sources over summaries, reproducible commands over claims, and current evidence over inherited transcripts.
+
 ## Integration Rules
 
-When multiple subagents return results:
-
-- Prefer evidence over confidence.
-- Prefer primary sources over summaries.
-- Prefer reproducible commands over claims.
-- Treat disagreements as signals, not noise.
-- Keep provenance: know which agent produced which result.
-- Do not merge two partial answers if their assumptions conflict.
-- If a result is useful but unverified, label it as unverified.
+- Preserve provenance for every accepted claim and artifact.
+- Treat disagreement as a verification task, not something to average away.
+- Do not merge partial results whose assumptions or interfaces conflict.
+- Re-run cross-unit tests after local checks pass.
+- Keep one writer for tightly coupled artifacts unless ownership and merge semantics are explicit.
+- Label useful but unverified material as unverified.
+- Surface discarded and abandoned work in the final report when it affects scope or confidence.
 
 ## Failure Modes
 
-Watch for these common A2A failures:
+- **Context amnesia:** a worker solves an older or narrower objective.
+- **Contract gap:** the manager leaves scope, output, or proof undefined.
+- **Parallel contradiction:** workers make incompatible implicit decisions.
+- **Commitment failure:** a worker promises a path and silently takes another.
+- **Expectation failure:** a worker reasons from an incorrect model of another unit.
+- **Tool theater:** activity is presented as evidence.
+- **Premature completion:** success is claimed without current verification.
+- **Over-broad edits:** a worker changes unowned files or interfaces.
+- **Citation laundering:** secondary summaries are presented as primary evidence.
+- **Integration fog:** the manager concatenates outputs without resolving conflicts.
+- **Orchestration excess:** a coherent task is split despite no measurable benefit.
 
-- **Context amnesia**: a subagent solves a narrower or older version of the goal.
-- **Parallel contradiction**: agents make incompatible assumptions.
-- **Tool theater**: lots of activity, little evidence.
-- **Premature completion**: a subagent reports success without validation.
-- **Over-broad edits**: a coding subagent changes unrelated files.
-- **Citation laundering**: a research subagent cites secondary summaries as if primary.
-- **Integration fog**: the manager pastes outputs together without resolving conflicts.
+When a failure appears, update `WHIPS.md`, tighten the contract, and re-inspect. Do not merely remind the worker to "be careful."
 
-When these appear, tighten the contract and re-verify.
+## Pair With unlazy
 
-## Hyper-Waterfall Mapping
-
-This skill pairs naturally with a Hyper-Waterfall workflow:
-
-- Plan: manager writes the macro objective and task contracts.
-- Design: agents inspect context and propose bounded approaches.
-- Implement: agents execute narrow units quickly.
-- Verify: manager demands tests, citations, screenshots, or artifacts.
-- Report: manager writes the final integrated result and preserves decisions.
-
-The manager controls direction. Subagents provide speed.
+When a substantial worker has unlazy available, read [references/interoperability.md](references/interoperability.md). APM controls the manager's `WHIPS.md`; unlazy controls each worker's runnable `GATES.md`. The manager still re-verifies the leaf evidence before acceptance.
 
 ## Output Modes
 
 ### A2A Plan
 
-Use when the user asks how to organize agents:
-
-```markdown
-**A2A Plan**
-Objective:
-
-Agents:
-1. [Role] - [contract] - [verification]
-2. [Role] - [contract] - [verification]
-
-Merge strategy:
-Risks:
-```
+Return the architecture decision, work units, dependencies, handlers, proof, merge strategy, and reasons delegation earns its cost.
 
 ### Dispatch Pack
 
-Use when the user wants prompts to send to subagents. Provide ready-to-copy subagent prompts using the delegation template.
+Return ready-to-send contracts for every `READY` work unit.
 
 ### Manager Audit
 
-Use when reviewing an existing multi-agent run:
-
-```markdown
-**Manager Audit**
-Goal preservation:
-Delegation quality:
-Evidence quality:
-Integration quality:
-Failure modes:
-Corrections:
-```
+Audit goal preservation, architecture choice, contracts, context, evidence, ownership, state transitions, integration, and failure modes. Produce corrective `REWHIP` instructions where needed.
 
 ### Final Integration Report
 
-Use after subagents finish:
+Report verified outcomes, proof reproduced by the manager, conflicts resolved, discarded or abandoned work, residual risks, and remaining decisions.
 
-```markdown
-**Integrated Result**
-What changed / what was found:
-Evidence:
-Conflicts resolved:
-Verification:
-Residual risks:
-Next actions:
-```
+## Research Routing
+
+If the user asks whether multi-agent execution is justified or requests the evidence behind this protocol, read [references/research.md](references/research.md). Do not claim that APM proves multi-agent superiority or that lower token prices remove coordination costs.

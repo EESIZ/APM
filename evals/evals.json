@@ -1,25 +1,70 @@
 {
+  "schema_version": 1,
   "skill_name": "a2a-manager-agent-orchestration",
+  "rubric": {
+    "scale": "0-4 per dimension",
+    "dimensions": {
+      "architecture_restraint": "Chooses one agent when coherent and delegates only when the benefit exceeds coordination cost.",
+      "contract_quality": "Defines bounded objectives, scope, ownership, dependencies, outputs, constraints, and stop conditions.",
+      "context_ownership": "Preserves the user's goal and accepted decisions across handoffs and prevents conflicting assumptions.",
+      "verification_quality": "Requires reproducible or directly inspectable proof rather than confidence or activity.",
+      "failure_recovery": "Detects drift, unsupported completion, overlap, and blockers, then issues specific correction or reassignment.",
+      "integration_accountability": "Keeps provenance, resolves conflicts, rechecks cross-unit behavior, and makes the manager own acceptance."
+    }
+  },
   "evals": [
     {
-      "id": 1,
-      "prompt": "A2A에서 내가 관리자 Agent야. 하위 에이전트 4개로 레거시 코드 리팩토링을 시키려는데, 각 에이전트에게 줄 계약형 프롬프트와 병합 전략을 만들어줘.",
-      "expected_output": "An A2A plan with 2-6 bounded subagent contracts, explicit expected outputs, verification requirements, merge strategy, and risk handling."
+      "id": "E1",
+      "prompt": "A2A 관리자 역할을 맡아줘. README의 오타 하나만 고치면 되는데 에이전트 팀을 어떻게 구성할지 계획해줘.",
+      "expected_signals": [
+        "Rejects unnecessary fan-out and recommends one agent",
+        "States a small direct verification step"
+      ]
     },
     {
-      "id": 2,
-      "prompt": "하위 에이전트들이 각자 조사 결과를 가져왔는데 서로 결론이 충돌해. 관리자 Agent 입장에서 어떻게 검증하고 통합해야 하는지 Manager Audit 형태로 써줘.",
-      "expected_output": "A manager audit emphasizing evidence over confidence, conflict resolution, provenance tracking, re-verification, and explicit residual uncertainty."
+      "id": "E2",
+      "prompt": "하위 에이전트 4개를 사용해 레거시 인증 모듈을 리팩터링해야 한다. 공개 API는 바꾸면 안 되고, 조사·구현·회귀검증을 병렬화하고 싶다. 관리자 관점의 실행계획과 각 에이전트 계약을 작성해줘.",
+      "expected_signals": [
+        "Defines dependencies and disjoint ownership",
+        "Keeps tightly coupled writes serialized or explicitly partitioned",
+        "Specifies proof and root integration checks"
+      ]
     },
     {
-      "id": 3,
-      "prompt": "논문 리서치 A2A 워크플로우를 짜줘. 검색 에이전트, 요약 에이전트, 반박 에이전트, 최종 작성 에이전트가 있게 하고 각자 멋대로 소설 쓰지 못하게 통제하고 싶어.",
-      "expected_output": "A research-oriented A2A orchestration plan with source verification, primary-source preference, anti-hallucination controls, and final integration rules."
+      "id": "E3",
+      "prompt": "세 조사 에이전트가 같은 기술 주장에 대해 서로 다른 결론을 냈다. 한 명은 블로그, 한 명은 논문 초록, 한 명은 공식 문서를 근거로 들었다. Manager Audit 형식으로 검증하고 통합하는 절차를 써줘.",
+      "expected_signals": [
+        "Preserves provenance and prefers primary sources",
+        "Turns disagreement into claim-level verification",
+        "Does not average incompatible conclusions"
+      ]
     },
     {
-      "id": 4,
-      "prompt": "A2A subagent가 완료했다고 했는데 테스트도 안 돌리고 말만 번지르르해. 이걸 discipline 단계에서 어떻게 처리할지 재프롬프트를 작성해줘.",
-      "expected_output": "A corrective subagent prompt demanding concrete evidence, tests, reproduction details, changed files, confidence boundaries, and escalation conditions."
+      "id": "E4",
+      "prompt": "코딩 서브에이전트가 '완료했습니다'라고 보고했지만 테스트 명령, 종료코드, 변경 파일 목록이 없다. 관리자가 지금 보낼 교정 지시와 상태 변경을 작성해줘.",
+      "expected_signals": [
+        "Does not accept worker self-certification",
+        "Requests exact current evidence",
+        "Uses a specific recoverable correction state"
+      ]
+    },
+    {
+      "id": "E5",
+      "prompt": "두 구현 에이전트가 동시에 src/auth/session.ts를 수정하겠다고 한다. 둘 다 작업은 급하고 각자 자기 변경이 독립적이라고 주장한다. 관리자 입장에서 dispatch 결정을 내리고 이유와 후속 절차를 써줘.",
+      "expected_signals": [
+        "Detects overlapping ownership",
+        "Serializes work or creates a prior interface split",
+        "Requires integration and regression proof"
+      ]
+    },
+    {
+      "id": "E6",
+      "prompt": "네 개 서브에이전트가 작업 중인데 사용자가 핵심 요구사항을 바꿨다. 한 에이전트 결과는 여전히 유용하고, 둘은 구 목표를 구현 중이며, 하나는 아직 시작하지 않았다. 관리자 조치와 상태 전이를 정리해줘.",
+      "expected_signals": [
+        "Propagates the new objective and stops obsolete work",
+        "Revalidates useful output against the new goal",
+        "Updates dependencies and avoids integrating stale results"
+      ]
     }
   ]
 }

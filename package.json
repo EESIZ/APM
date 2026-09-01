@@ -1,0 +1,15 @@
+{
+  "name": "apm-agent-skill",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Validation and evaluation harness for the APM manager-agent skill.",
+  "license": "MIT",
+  "scripts": {
+    "test": "node scripts/validate-repo.mjs && node scripts/validate-skill.mjs && node scripts/run-evals.mjs --verify",
+    "eval": "node scripts/run-evals.mjs --runtime claude",
+    "eval:codex": "node scripts/run-evals.mjs --runtime codex"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
