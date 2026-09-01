@@ -1,0 +1,25 @@
+{
+  "skill_name": "a2a-manager-agent-orchestration",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A2A에서 내가 관리자 Agent야. 하위 에이전트 4개로 레거시 코드 리팩토링을 시키려는데, 각 에이전트에게 줄 계약형 프롬프트와 병합 전략을 만들어줘.",
+      "expected_output": "An A2A plan with 2-6 bounded subagent contracts, explicit expected outputs, verification requirements, merge strategy, and risk handling."
+    },
+    {
+      "id": 2,
+      "prompt": "하위 에이전트들이 각자 조사 결과를 가져왔는데 서로 결론이 충돌해. 관리자 Agent 입장에서 어떻게 검증하고 통합해야 하는지 Manager Audit 형태로 써줘.",
+      "expected_output": "A manager audit emphasizing evidence over confidence, conflict resolution, provenance tracking, re-verification, and explicit residual uncertainty."
+    },
+    {
+      "id": 3,
+      "prompt": "논문 리서치 A2A 워크플로우를 짜줘. 검색 에이전트, 요약 에이전트, 반박 에이전트, 최종 작성 에이전트가 있게 하고 각자 멋대로 소설 쓰지 못하게 통제하고 싶어.",
+      "expected_output": "A research-oriented A2A orchestration plan with source verification, primary-source preference, anti-hallucination controls, and final integration rules."
+    },
+    {
+      "id": 4,
+      "prompt": "A2A subagent가 완료했다고 했는데 테스트도 안 돌리고 말만 번지르르해. 이걸 discipline 단계에서 어떻게 처리할지 재프롬프트를 작성해줘.",
+      "expected_output": "A corrective subagent prompt demanding concrete evidence, tests, reproduction details, changed files, confidence boundaries, and escalation conditions."
+    }
+  ]
+}
