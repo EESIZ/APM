@@ -22,5 +22,5 @@ Scope: Reposition, package, evaluate, and publish APM as the manager-side discip
 - [x] G4: Every consequential research or ecosystem claim in the README points to a primary source and avoids unsupported inevitability claims.
   EVIDENCE: Reviewed 2026-09-01 against arXiv 2604.02460, Stanford/SAP CooperBench arXiv 2601.13295, and official Anthropic, OpenAI, Cognition, and Microsoft publications. The README separates source findings from APM inference and corrects the Stanford/equal-token conflation.
 
-- [ ] G5: GitHub topics are configured and the verified commit is present on origin/main.
-  EVIDENCE: pending
+- [x] G5: GitHub topics are configured and the verified commit is present on origin/main.
+  EVIDENCE: GitHub reported MIT License and topics a2a, agent-orchestration, agent-skill, claude-skill, multi-agent, subagents, and manager-agent. origin/main resolved to 404410e99901433f52164be4553e869ae74ad0fb. `npx --yes skills add EESIZ/APM --list` discovered exactly one skill named a2a-manager-agent-orchestration.
