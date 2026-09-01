@@ -1,6 +1,5 @@
 # APM
 **AI 농장주에게 바치는 중간 관리자 매뉴얼**
-**If unlazy disciplines the worker, APM disciplines the manager.**
 
 [![Support ESIZAL on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/esizal)
 
