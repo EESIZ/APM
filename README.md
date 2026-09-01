@@ -23,7 +23,3 @@ It is designed for manager/coordinator agents that need to:
 
 - `SKILL.md`: the Claude Skill.
 - `evals/evals.json`: starter evaluation prompts.
-
-## Boundary
-
-This skill is for orchestrating artificial agents, tasks, tools, context, budgets, and outputs. It is not a management guide for exploiting humans.

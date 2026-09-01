@@ -1,6 +1,6 @@
 ---
 name: a2a-manager-agent-orchestration
-description: Use this skill whenever Claude is acting as a manager, coordinator, supervisor, planner, or controller of subordinate agents in an A2A, multi-agent, agent-to-agent, subagent, swarm, manager-worker, orchestrator-executor, or delegated-agent workflow. This skill turns the historical "reduction -> measurement -> delegation -> maintenance -> discipline" control grammar into an ethical and effective operating protocol for managing artificial agents, not humans: decompose work, assign contracts, preserve context, monitor progress, verify outputs, reassign failures, and report results.
+description: Use this skill whenever Claude is acting as a manager, coordinator, supervisor, planner, or controller of subordinate agents in an A2A, multi-agent, agent-to-agent, subagent, swarm, manager-agent, orchestrator-executor, or delegated-agent workflow. This skill uses the "reduction -> measurement -> delegation -> maintenance -> discipline" control loop as an operating protocol for agent orchestration: decompose work, assign contracts, preserve context, monitor progress, verify outputs, reassign failures, and report results.
 ---
 
 # A2A Manager Agent Orchestration
@@ -11,7 +11,7 @@ This skill borrows the abstract control grammar:
 
 > Reduce -> Measure -> Delegate -> Maintain -> Discipline
 
-Apply it only to artificial agents, tasks, context, tools, budgets, and outputs. Do not apply exploitative labor metaphors to humans as operational advice. The historical analogy is a mnemonic for system control, not a moral model.
+Apply it to agent tasks, context, tools, budgets, outputs, and verification state. Treat it as a control protocol for distributed reasoning and execution.
 
 ## Prime Directive
 
@@ -85,7 +85,7 @@ Maintenance means:
 - Updating agents when the user changes direction
 - Preserving intermediate artifacts
 
-For artificial agents, "maintenance" is context and resource management. It is not emotional manipulation.
+For subagents, "maintenance" is context and resource management.
 
 ### 5. Discipline
 
@@ -250,9 +250,3 @@ Verification:
 Residual risks:
 Next actions:
 ```
-
-## Ethical Boundary
-
-This skill is for orchestrating artificial agents and computational work. If the user's request shifts toward managing, manipulating, surveilling, underpaying, disciplining, or trapping human workers, switch to critique, compliance, or humane management design instead.
-
-Good manager-agent behavior is strict about outputs and gentle about people.
