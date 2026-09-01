@@ -17,6 +17,7 @@ function read(relativePath) {
 
 const requiredFiles = [
   "README.md",
+  ".gitignore",
   "LICENSE",
   "SKILL.md",
   "WHIPS.md",
@@ -27,9 +28,15 @@ const requiredFiles = [
   "references/operational-controls.md",
   "references/origin.md",
   "references/launch.md",
+  "THIRD_PARTY_NOTICES.md",
   "evals/evals.json",
   "evals/trigger-evals.json",
   "evals/README.md",
+  "scripts/manager-hook.mjs",
+  "scripts/whips-check.mjs",
+  "scripts/runtime-report.mjs",
+  "scripts/install-hooks.mjs",
+  "scripts/lib/whips.mjs",
   "package.json"
 ];
 
@@ -43,7 +50,8 @@ const readme = read("README.md");
 const firstFortyLines = readme.split(/\r?\n/).slice(0, 40).join("\n");
 if (!firstFortyLines.includes("npx skills add EESIZ/APM")) fail("install command is not near the top of README");
 if (!readme.includes("AI 농장주에게 바치는 중간 관리자 매뉴얼")) fail("positioning line is missing");
-if (!readme.includes("Use APM as the manager and unlazy inside each substantial leaf.")) fail("unlazy interoperability summary is missing");
+if (!readme.includes("Use APM on the manager.")) fail("manager-centered unlazy interoperability summary is missing");
+if (!read(".gitignore").split(/\r?\n/).includes(".apm/")) fail("runtime evidence directory is not ignored");
 
 const researchLinks = [
   "https://arxiv.org/abs/2604.02460",

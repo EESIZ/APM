@@ -16,7 +16,7 @@ Requirements:
 
 - Node.js 18 or newer;
 - an authenticated `claude` CLI;
-- enough account or API budget for 13 model calls with the default six-case suite.
+- enough account or API budget for 25 model calls with the current twelve-case suite.
 
 ```bash
 npm run eval
@@ -36,6 +36,12 @@ node scripts/run-evals.mjs --verify
 Environment variables `APM_EVAL_RUNTIME`, `APM_EVAL_MODEL`, `APM_EVAL_JUDGE_MODEL`, `APM_EVAL_MAX_BUDGET_USD`, `APM_EVAL_CLAUDE`, and `APM_EVAL_CODEX` provide the same overrides.
 
 `npm test` validates repository, skill, and evaluation-fixture structure without rewriting historical results. `npm run test:recorded` additionally requires `evals/results/latest.json` to match the current `SKILL.md` and manager suite byte-for-byte. It is expected to fail after a skill or suite revision until a new controlled run replaces the recorded result; do not update stored hashes without running the models.
+
+## Runtime Enforcement Tests
+
+`npm test` also executes `tests/runtime-tests.mjs`. These cases run the actual hook processes with Claude Code-shaped JSON payloads and temporary ledgers. They verify dispatch denial, exact contract binding, worker-return correction, manager Stop blocking across active states, strict default behavior, the optional emergency release, sibling-hook preservation, and runtime-log privacy.
+
+During a live APM run, hook decisions append to `.apm/runtime.jsonl`. Aggregate the event stream with `node scripts/runtime-report.mjs --json`. It records activation and control interventions, not prompt text, worker messages, or proof that the produced artifact is correct. Compare these runtime metrics with task quality, elapsed time, tokens, and benchmark outcomes rather than treating intervention count alone as productivity.
 
 ## Interpretation
 

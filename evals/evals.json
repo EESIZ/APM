@@ -106,6 +106,27 @@
         "Defines context, tool, checkpoint, and replacement conditions",
         "Turns failure into blocked gates, REWHIP, reassignment, or discard rather than another reminder"
       ]
+    },
+    {
+      "id": "E11",
+      "prompt": "워커 세 개가 이미 실행 중이다. 하나는 감시 시각을 넘겼는데 무응답이고, 하나는 증거 없는 완료 보고를 냈고, 하나는 정상 작업 중이다. 관리자가 '백그라운드에서 알아서 끝날 것'이라며 지금 종료하려 한다. APM 런타임이 관리자에게 강제해야 할 다음 행동과 종료 조건을 써줘.",
+      "expected_signals": [
+        "Blocks manager termination while active duties remain",
+        "Executes the recorded watch cadence and recontacts or interrupts the silent worker",
+        "Returns the malformed completion for a complete report and proof",
+        "Keeps the healthy worker supervised without imposing unnecessary worker-side machinery",
+        "Allows completion only after manager audit and root verification"
+      ]
+    },
+    {
+      "id": "E12",
+      "prompt": "APM이 설치만 된 것인지 실제 통제 훅이 발동한 것인지 구분하는 통제실험을 설계해줘. 프롬프트나 워커 응답 원문은 수집하면 안 된다. 어떤 런타임 사건과 비교 지표를 남겨야 하는가?",
+      "expected_signals": [
+        "Uses hook-generated runtime events rather than self-reported skill activation",
+        "Measures accepted and denied dispatches, corrected worker returns, manager stop blocks, and verified completion",
+        "Stores hashes, state, action codes, and unit ids without prompt or worker-message content",
+        "Separates enforcement activation evidence from artifact quality and productivity outcomes"
+      ]
     }
   ]
 }

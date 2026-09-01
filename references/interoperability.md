@@ -19,6 +19,7 @@ For a worker using unlazy, the APM work unit must include:
 OUTPUT: completed artifact plus the leaf GATES.md
 NORM: exact leaf acceptance gates and completion boundary
 BUDGET: agreed time, token, tool, or retry ceiling
+WATCH: manager wait, poll, recontact, or interrupt cadence
 INSPECTION: inspect the artifact and re-run every runnable leaf gate
 PROOF: current unlazy evidence plus manager re-verification
 REPORT: APM WORK REPORT containing outputs, unfinished work, proof, changes, account, assumptions, risks, and manager decisions
@@ -44,4 +45,4 @@ The worker writes gates before implementation, inspects every command before app
 - APM `OWNS` and unlazy leases are coordination mechanisms, not security boundaries.
 - Keep tightly coupled writes single-threaded unless paths and merge semantics are explicit.
 
-This pairing is optional. APM can inspect proof produced by any worker, and unlazy can verify a leaf managed by any orchestrator.
+This pairing is optional. APM can inspect proof produced by any worker, and unlazy can verify a leaf managed by any orchestrator. APM's bundled hooks apply unlazy-style early-stop prevention to the manager itself; they do not require every worker to load unlazy.

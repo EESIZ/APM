@@ -26,7 +26,13 @@ if (name !== "a2a-manager-agent-orchestration") fail("unexpected skill name");
 
 const descriptionStart = yaml.match(/^description:\s*>-\s*$/m);
 if (!descriptionStart) fail("description must use a folded block scalar");
-const descriptionLines = yaml.split(/\r?\n/).slice(2);
+const yamlLines = yaml.split(/\r?\n/);
+const descriptionIndex = yamlLines.findIndex((line) => /^description:\s*>-\s*$/.test(line));
+const descriptionLines = [];
+for (let index = descriptionIndex + 1; index < yamlLines.length; index += 1) {
+  if (/^[A-Za-z0-9_-]+:\s*/.test(yamlLines[index])) break;
+  descriptionLines.push(yamlLines[index]);
+}
 if (!descriptionLines.length || descriptionLines.some((line) => line && !/^\s{2,}\S/.test(line))) {
   fail("description block is not consistently indented");
 }
@@ -43,9 +49,25 @@ for (const text of requiredDescriptionText) {
   if (!description.includes(text)) fail(`description is missing trigger language: ${text}`);
 }
 
+const requiredHookText = [
+  "hooks:",
+  "PreToolUse:",
+  "matcher: \"Agent|Task\"",
+  "manager-hook.mjs\" pre-agent",
+  "SubagentStop:",
+  "manager-hook.mjs\" subagent-stop",
+  "Stop:",
+  "manager-hook.mjs\" stop"
+];
+for (const text of requiredHookText) {
+  if (!yaml.includes(text)) fail(`frontmatter is missing runtime hook: ${text}`);
+}
+
 const requiredSkillText = [
   "## Choose Architecture First",
   "## Activation And Execution Rule",
+  "## The Manager Must Be Unlazy",
+  ".apm/runtime.jsonl",
   "## Five-Control Dispatch Gate",
   "## WHIPS Ledger",
   "Only the manager changes a unit to `VERIFIED`",
@@ -71,7 +93,7 @@ for (const state of states) {
   if (!whips.includes(state)) fail(`WHIPS.md is missing state ${state}`);
 }
 
-const fields = ["HANDLER:", "NEEDS:", "OWNS:", "INPUTS:", "OUTPUT:", "NORM:", "BUDGET:", "INSPECTION:", "PROOF:", "DISPATCH:", "REPORT:", "ACCOUNT:", "STATE:", "EVIDENCE:"];
+const fields = ["HANDLER:", "NEEDS:", "OWNS:", "INPUTS:", "OUTPUT:", "NORM:", "BUDGET:", "WATCH:", "INSPECTION:", "PROOF:", "DISPATCH:", "REPORT:", "ACCOUNT:", "STATE:", "EVIDENCE:"];
 for (const field of fields) {
   if (!template.includes(field)) fail(`WHIPS template is missing ${field}`);
 }
@@ -86,6 +108,7 @@ const markdownFiles = [
   "references/operational-controls.md",
   "references/origin.md",
   "references/launch.md",
+  "THIRD_PARTY_NOTICES.md",
   "evals/README.md"
 ];
 
@@ -96,6 +119,10 @@ for (const markdownFile of markdownFiles) {
     const target = path.resolve(root, path.dirname(markdownFile), match[1]);
     if (!fs.existsSync(target)) fail(`${markdownFile} links to missing ${match[1]}`);
   }
+}
+
+for (const script of ["scripts/manager-hook.mjs", "scripts/whips-check.mjs", "scripts/runtime-report.mjs", "scripts/install-hooks.mjs", "scripts/lib/whips.mjs"]) {
+  read(script);
 }
 
 console.log("skill validation passed");

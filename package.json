@@ -5,7 +5,7 @@
   "description": "Validation and evaluation harness for the APM manager-agent skill.",
   "license": "MIT",
   "scripts": {
-    "test": "node scripts/validate-repo.mjs && node scripts/validate-skill.mjs && node scripts/validate-evals.mjs",
+    "test": "node scripts/validate-repo.mjs && node scripts/validate-skill.mjs && node scripts/validate-evals.mjs && node tests/runtime-tests.mjs",
     "test:recorded": "node scripts/run-evals.mjs --verify",
     "eval": "node scripts/run-evals.mjs --runtime claude",
     "eval:codex": "node scripts/run-evals.mjs --runtime codex"

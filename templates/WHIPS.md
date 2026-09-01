@@ -6,6 +6,7 @@ INTEGRATION: <how verified units become one result>
 STOP: <root completion condition>
 ENFORCEMENT: no downstream dispatch or integration before manager verification
 AUDIT CADENCE: after every return and before every dependent dispatch
+RUNTIME LOG: .apm/runtime.jsonl
 
 - [ ] W1: <observable work unit>
   HANDLER: UNASSIGNED
@@ -15,6 +16,7 @@ AUDIT CADENCE: after every return and before every dependent dispatch
   OUTPUT: <artifact or response contract>
   NORM: <expected quantity, quality, proof, and completion boundary>
   BUDGET: <time, tokens, calls, tools, or other limit>
+  WATCH: <wait, poll, recontact, or interrupt cadence>
   INSPECTION: <what the manager will examine independently>
   PROOF: <commands, source evidence, or observable acceptance evidence>
   DISPATCH: pending
@@ -31,6 +33,7 @@ AUDIT CADENCE: after every return and before every dependent dispatch
   OUTPUT: <artifact or response contract>
   NORM: <expected quantity, quality, proof, and completion boundary>
   BUDGET: <time, tokens, calls, tools, or other limit>
+  WATCH: <wait, poll, recontact, or interrupt cadence>
   INSPECTION: <what the manager will examine independently>
   PROOF: <commands, source evidence, or observable acceptance evidence>
   DISPATCH: pending

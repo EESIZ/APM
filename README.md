@@ -17,6 +17,26 @@ npx skills add EESIZ/APM
 
 Then ask the agent to manage a multi-agent task, produce an `A2A Plan`, create a `WHIPS.md` ledger, or audit a run already in progress.
 
+### Runtime Enforcement
+
+APM carries [Claude Code lifecycle hooks](https://code.claude.com/docs/en/hooks) in the [skill frontmatter](https://code.claude.com/docs/en/skills). While APM is active, an uncontracted Agent dispatch is denied, a malformed worker return is sent back, and the manager cannot stop while `WHIPS.md` still computes unfinished duties.
+
+The manager is the disciplined party. Leaf workers may use unlazy, but APM does not require every worker to install it. Instead, the manager must keep dispatching, watching, auditing, correcting, and integrating until the root gate is settled. Each runtime decision is recorded without prompt or worker-message content in `.apm/runtime.jsonl`, so an experiment can distinguish “the skill was present” from “the controls actually fired.”
+
+```bash
+node scripts/runtime-report.mjs --json
+```
+
+Treat `.apm/` as local runtime evidence and ignore it in ordinary commits.
+
+For project-wide enforcement that catches Agent calls even before automatic skill activation, install the persistent hooks from a cloned copy:
+
+```bash
+node scripts/install-hooks.mjs
+```
+
+This writes project-local `.claude/settings.local.json` by default. Use `--uninstall` to remove only APM handlers, `--shared` for committed project settings, or `--global` for all local projects. The manager Stop gate is strict by default; use `--allow-emergency-release` only when a six-unchanged-block escape hatch is deliberately preferred. Persistent installation is explicit because it changes Claude Code runtime settings; the skill never installs it silently.
+
 ## The Missing Layer
 
 Multi-agent systems rarely fail because they needed one more agent. They fail because nobody owns the whole result.
@@ -55,7 +75,9 @@ User
        -> unlazy leaf: acceptance gates, runnable checks, evidence
 ```
 
-Use APM as the manager and unlazy inside each substantial leaf. The manager records the assignment in `WHIPS.md`. The worker proves its local result in `GATES.md`. The manager then checks the proof independently before moving the work unit to `VERIFIED`. A completion claim is only a claim until that happens. See [the interoperability contract](references/interoperability.md).
+Use APM on the manager. Add unlazy only to a leaf whose local work is substantial enough to justify its own `GATES.md`. The manager records every assignment in `WHIPS.md`, regardless of whether the worker uses another skill, and independently checks proof before moving a unit to `VERIFIED`. A completion claim is only a claim until that happens. See [the interoperability contract](references/interoperability.md).
+
+The dependency is optional and the direction matters. Every worker does not need unlazy. APM adapts unlazy's early-stop discipline to the manager, forcing the orchestrator to keep dispatching, watching, auditing, correcting, and integrating until its own ledger is settled. Adapted runtime components retain the original MIT notice in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Evidence, Not Hype
 
@@ -81,9 +103,11 @@ npm test
 npm run eval
 ```
 
+`npm test` also executes the runtime hooks as child processes with realistic Claude Code hook payloads. The current deterministic suite covers 19 dispatch, return, stop, strictness, installer, ledger, and privacy-preserving telemetry cases.
+
 The harness keeps model identifiers, raw outputs, rubric scores, usage, and cost when available in `evals/results/`. It measures what APM changes in a manager's response. It is not a disguised single-agent-versus-multi-agent benchmark. See [evals/README.md](evals/README.md).
 
-Latest controlled run (2026-09-01, Codex `gpt-5.4-mini`, six cases, blinded same-model judge):
+Archived prompt-level controlled run (2026-09-01, Codex `gpt-5.4-mini`, six cases, blinded same-model judge):
 
 | Condition | Score | Percent |
 | --- | ---: | ---: |
@@ -101,7 +125,7 @@ An informal Claude Code reproduction used Claude Sonnet subagents as both target
 
 The notable part is not that both runs improved. It is that APM reached the same `130/144` in both model environments while the baselines differed by two points. Claude showed its largest gains in disagreement resolution, overlapping-work arbitration, and goal-change handling.
 
-There is a limit to that conclusion. The Claude result inherited Claude Code system and user context, did not pin effort or cost, and used one run with one judge. It is corroborating evidence, not a second controlled harness run. These are prompt-level results, not a universal effect size. The [controlled-run summary](evals/RESULTS.md), [Claude reproduction report](evals/CLAUDE-REPRODUCTION.md), and [raw artifacts](evals/results/) are committed so the claim can be inspected rather than admired from a distance.
+There is a limit to that conclusion. The Claude result inherited Claude Code system and user context, did not pin effort or cost, and used one run with one judge. It is corroborating evidence, not a second controlled harness run. These are prompt-level results, not a universal effect size. They also predate the manager-runtime hooks and the current twelve-case suite; `npm run test:recorded` deliberately remains red until a fresh live comparison is recorded. The [controlled-run summary](evals/RESULTS.md), [Claude reproduction report](evals/CLAUDE-REPRODUCTION.md), and [raw artifacts](evals/results/) are committed so the claim can be inspected rather than admired from a distance.
 
 ## Historical Origin
 
@@ -146,6 +170,11 @@ AI does not possess human rights. Attachment is possible, but it should resemble
 - `references/launch.md`: distribution order, outreach drafts, and measurement cadence.
 - `evals/`: prompts, rubric, raw results, and evaluation notes.
 - `scripts/`: zero-dependency validation and live A/B evaluation.
+- `scripts/manager-hook.mjs`: Claude Code dispatch, worker-return, and manager-stop enforcement.
+- `scripts/whips-check.mjs`: deterministic manager-duty audit.
+- `scripts/runtime-report.mjs`: privacy-preserving runtime intervention summary.
+- `scripts/install-hooks.mjs`: optional persistent Claude Code hook installer.
+- `THIRD_PARTY_NOTICES.md`: attribution for adapted unlazy runtime mechanisms.
 
 ## Support / 후원
 

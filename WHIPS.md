@@ -23,6 +23,7 @@ INTEGRATION: <how verified units become one result>
 STOP: <root completion condition>
 ENFORCEMENT: no downstream dispatch or integration before manager verification
 AUDIT CADENCE: after every return and before every dependent dispatch
+RUNTIME LOG: .apm/runtime.jsonl
 ```
 
 ## Required Work Unit Fields
@@ -36,6 +37,7 @@ AUDIT CADENCE: after every return and before every dependent dispatch
   OUTPUT: <artifact or response contract>
   NORM: <expected quantity, quality, proof, and completion boundary>
   BUDGET: <time, tokens, calls, tools, or other limit>
+  WATCH: <wait, poll, recontact, or interrupt cadence>
   INSPECTION: <what the manager will examine independently>
   PROOF: <commands, source evidence, or observable acceptance evidence>
   DISPATCH: <worker call/session id and dispatch time, or pending>
@@ -54,7 +56,7 @@ The fields implement the five controls:
 | Reduce | unit id, `NEEDS`, `OWNS`, one observable `OUTPUT` |
 | Measure | `NORM`, `BUDGET`, `PROOF`, and returned `ACCOUNT` |
 | Delegate | written work order, `HANDLER`, `DISPATCH`, and reporting line |
-| Maintain | current `INPUTS`, budget checkpoint, blocker report, and replacement condition |
+| Maintain | current `INPUTS`, `WATCH` cadence, budget checkpoint, blocker report, and replacement condition |
 | Discipline | manager-owned `STATE`, evidence gate, `REWHIP`, reassignment, discard, or abandonment |
 
 ## State Authority
@@ -78,6 +80,35 @@ State transitions control execution:
 - Keep dependent units `WAITING` while any id in `NEEDS` is not `VERIFIED`.
 - A missing or malformed report does not unlock inspection. Record the breach and issue `REWHIP`.
 - Do not close the run while a required unit is `READY`, `IN-FLIGHT`, `VERIFYING`, or `REWHIP`.
+
+## Runtime Manager Gate
+
+Run the bundled checker from the target project root:
+
+```text
+node <installed-skill-dir>/scripts/whips-check.mjs --status
+```
+
+It derives manager duties from the ledger rather than trusting checked boxes:
+
+- `M-UNLOCK` for dependencies that have become ready;
+- `M-DISPATCH` for a ready work order;
+- `M-WATCH` for an in-flight handler requiring wait, poll, recontact, or interruption;
+- `M-AUDIT` for returned work requiring independent inspection;
+- `M-CORRECT` for a `REWHIP` requiring redispatch or reassignment;
+- `M-INTEGRATE` when verified leaves are ready for root integration.
+
+Claude Code runtime hooks call the same checker logic before Agent dispatch, when a subagent stops, and when the manager attempts to stop. The Markdown ledger remains the auditable source of truth; the hooks turn it into control flow.
+
+The manager Stop gate is strict by default. A genuinely impossible or obsolete unit exits through an evidence-backed `ABANDONED` disposition and handoff, not by repeating the Stop attempt. The persistent installer offers `--allow-emergency-release` only as an explicit recovery tradeoff.
+
+Every hook decision is also appended to `.apm/runtime.jsonl`. The event stream stores hashes, states, action codes, and unit ids, but never prompts or worker messages. It makes activation and intervention measurable without treating a prose transcript as proof. Summarize it with:
+
+```text
+node <installed-skill-dir>/scripts/runtime-report.mjs --json
+```
+
+Keep `.apm/` out of version control unless a sanitized experiment fixture is deliberately being committed.
 
 ## Corrective Dispatch
 

@@ -7,7 +7,7 @@ APM's five operations are abstractions extracted from historical estate-manageme
 | Count work, labor, tools, and unfinished duties | Reduce | Divide the objective into bounded units with one owner and visible dependencies | Unit id, `HANDLER`, `NEEDS`, `OWNS`, `OUTPUT` | An ambiguous or overlapping unit stays `WAITING` |
 | Compare output with labor and time; inspect before accepting explanations | Measure | Set the norm and budget before dispatch, then compare them with actual output and usage | `NORM`, `BUDGET`, `PROOF`, `ACCOUNT` | Unsupported narratives cannot pass `VERIFYING` |
 | Leave written directions and require reports through an overseer | Delegate | Put the complete work order and report schema in every child prompt; retain one integration authority | `DISPATCH`, APM work order, APM work report | A worker cannot self-certify or silently alter sibling work |
-| Preserve tools, records, health, and productive capacity | Maintain | Refresh context, supply tools, check blockers and budget, replace stale or contaminated contexts | `INPUTS`, checkpoints, blocker reports, replacement reason | Obsolete work is stopped; looping or stale workers lose the assignment |
+| Preserve tools, records, health, and productive capacity | Maintain | Refresh context, supply tools, execute a `WATCH` cadence, check blockers and budget, replace stale or contaminated contexts | `INPUTS`, `WATCH`, checkpoints, blocker reports, replacement reason | Obsolete work is stopped; looping or stale workers lose the assignment |
 | Return the overseer to the account and correct failed execution | Discipline | Hold dependent gates, demand missing evidence, `REWHIP`, revoke ownership, reassign, discard, or abandon | manager-owned `STATE`, correction history, evidence | Failure changes execution state and ownership instead of producing a verbal reminder |
 
 ## Concrete Cycle
@@ -36,3 +36,5 @@ APM's five operations are abstractions extracted from historical estate-manageme
 4. Close the run only when every required unit has a verified or explicitly terminal disposition.
 
 The resulting system does not rely on workers voluntarily remembering APM. The manager carries the controls into each dispatch and makes compliance observable through state transitions.
+
+The runtime translation is intentionally manager-centered. `PreToolUse` prevents the manager from issuing an unaccountable order, `SubagentStop` prevents the manager from receiving an unaccountable return, and `Stop` prevents the manager from leaving computed duties unfinished. WHIPS acts as a whip by creating consequences for managerial inaction.

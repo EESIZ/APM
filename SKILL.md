@@ -11,6 +11,23 @@ description: >-
   manager loop with work contracts, report envelopes, evidence gates, state
   tracking, corrective redispatch, and verified integration. Keep a coherent
   task single-agent when delegation cannot repay its coordination cost.
+hooks:
+  PreToolUse:
+    - matcher: "Agent|Task"
+      hooks:
+        - type: command
+          command: 'node "${CLAUDE_SKILL_DIR}/scripts/manager-hook.mjs" pre-agent'
+          timeout: 10
+  SubagentStop:
+    - hooks:
+        - type: command
+          command: 'node "${CLAUDE_SKILL_DIR}/scripts/manager-hook.mjs" subagent-stop'
+          timeout: 10
+  Stop:
+    - hooks:
+        - type: command
+          command: 'node "${CLAUDE_SKILL_DIR}/scripts/manager-hook.mjs" stop'
+          timeout: 20
 ---
 
 # A2A Manager Agent Orchestration
@@ -37,6 +54,29 @@ The protocol is closed-loop:
 - no dependency unlock based only on dispatch, activity, or a worker's completion claim;
 - no integration before manager-owned verification;
 - no final completion while a required unit remains `READY`, `IN-FLIGHT`, `VERIFYING`, or `REWHIP`.
+
+## The Manager Must Be Unlazy
+
+APM applies completion discipline to the manager. Workers may use unlazy, but that is optional. The manager must continuously turn the ledger into runtime actions:
+
+- `M-UNLOCK`: notice that dependencies cleared and ready the next unit;
+- `M-DISPATCH`: send a complete contract instead of postponing or merely describing it;
+- `M-WATCH`: wait, poll, recontact, or interrupt an in-flight handler at the recorded cadence;
+- `M-AUDIT`: inspect returned artifacts and reproduce proof instead of trusting the report;
+- `M-CORRECT`: issue `REWHIP`, revoke ownership, reassign, discard, or abandon with evidence;
+- `M-INTEGRATE`: combine verified units and run root proof.
+
+The bundled runtime hooks enforce this discipline while the skill is active:
+
+1. `PreToolUse` denies an Agent dispatch without an active ledger and complete work-order/report envelope.
+2. `SubagentStop` sends a worker back when its final message is not an accountable APM work report.
+3. `Stop` prevents the manager from finishing while computed manager duties or invalid ledger state remain.
+
+Run `node "${CLAUDE_SKILL_DIR}/scripts/whips-check.mjs" --status` whenever the next manager action is unclear. Hook decisions are recorded without prompt or worker-message content in `.apm/runtime.jsonl`; summarize actual dispatch gates, corrected returns, manager stop blocks, and verified completion with `node "${CLAUDE_SKILL_DIR}/scripts/runtime-report.mjs" --json`. The event log proves that enforcement ran, but does not replace artifact proof.
+
+The manager Stop gate is strict by default. Do not retry termination to escape work. Resolve the next duty, or record an evidence-backed `DISCARDED`/`ABANDONED` disposition and handoff when completion is genuinely unwarranted or impossible. Persistent installation may explicitly opt into a six-unchanged-block emergency release with `--allow-emergency-release`.
+
+For project-wide enforcement that also catches an Agent call before automatic skill activation, ask the user once for approval and run `node "${CLAUDE_SKILL_DIR}/scripts/install-hooks.mjs"`. Never install persistent hooks silently.
 
 ## Choose Architecture First
 
@@ -94,6 +134,7 @@ Assign a contract, not a wish. Every contract states:
 - required method and prohibited changes;
 - output format and durable artifact path when applicable;
 - inspection and proof requirements;
+- active watch cadence and recontact condition;
 - dependencies, budget, escalation condition, and stop condition.
 
 Embed the complete [Worker Dispatch Envelope](#worker-dispatch-envelope) in every worker prompt. Skills and manager context are not assumed to propagate into a child agent. The dispatch itself must carry the objective, boundaries, proof requirement, and report schema.
@@ -192,26 +233,39 @@ Put this entire envelope in every child-agent prompt. Do not reduce it to a role
 
 ```markdown
 APM WORK ORDER: <unit id>
-User objective:
-Work unit:
-Handler role:
-Needs:
-Context and accepted decisions:
-Scope / OWNS:
-Do not:
-Required method:
-Expected output:
-Inspection:
-Proof:
-Norm:
-Budget:
-Report when: complete | blocked | before scope change | at budget threshold
-Escalate if:
-Stop when:
+USER OBJECTIVE: <the user's preserved objective>
+WORK UNIT: <one bounded assignment>
+HANDLER ROLE: <narrow role>
+NEEDS: <verified unit ids or none>
+CONTEXT: <minimum context and accepted decisions>
+OWNS: <exact paths or read-only scope>
+DO NOT: <prohibited changes or none>
+METHOD: <required method>
+OUTPUT: <exact artifact or response>
+INSPECTION: <manager-owned inspection>
+PROOF: <reproducible acceptance evidence>
+NORM: <quantity, quality, proof, and completion boundary>
+BUDGET: <time, tokens, calls, or other limit>
+WATCH: <wait, poll, recontact, or interrupt cadence>
+REPORT WHEN: complete | blocked | before scope change | at budget threshold
+ESCALATE IF: <condition requiring a manager decision>
+STOP WHEN: <completion or evidenced blocker condition>
 
-Return exactly one APM WORK REPORT using the required schema below. Do not claim
-completion without the requested proof. Do not integrate other workers' output.
+Return exactly this one report, with every value on one line:
+APM WORK REPORT
+UNIT: <unit id>
+STATUS: COMPLETE | BLOCKED | PARTIAL
+OUTPUTS: <exact paths, patch, commit, findings, or none>
+UNFINISHED: <required work not completed, or none>
+PROOF: <command and exit code, source evidence, or observable check>
+CHANGES: <files, interfaces, and decisions changed>
+ACCOUNT: <norm achieved, budget used, and deviations>
+ASSUMPTIONS: <remaining assumptions or none>
+RISKS: <residual risks or none>
+MANAGER DECISION: <specific decision needed or none>
 ```
+
+The runtime gate requires every order field to be non-empty and checks the exact ledger values for `NEEDS`, `OWNS`, `OUTPUT`, `INSPECTION`, `PROOF`, `NORM`, `BUDGET`, and `WATCH`. A manager cannot weaken an approved contract while dispatching it.
 
 For runtimes that support an acknowledgement round, require the worker to confirm the unit id, owned scope, and blockers before changing artifacts. For one-shot worker tools, the final report remains mandatory.
 
@@ -267,6 +321,8 @@ When a failure appears, update `WHIPS.md`, tighten the contract, and re-inspect.
 ## Pair With unlazy
 
 When a substantial worker has unlazy available, read [references/interoperability.md](references/interoperability.md). APM controls the manager's `WHIPS.md`; unlazy controls each worker's runnable `GATES.md`. The APM work order and return schema must still be present in the child prompt because worker-side skill activation is not guaranteed. The manager still re-verifies the leaf evidence before acceptance.
+
+APM's manager-runtime Stop-hook progress guard and installer structure are adapted from unlazy under the MIT License. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The borrowed mechanism is deliberately inverted: unlazy keeps a worker from declaring its own leaf complete too early; APM keeps the manager from ceasing supervision too early.
 
 ## Output Modes
 
