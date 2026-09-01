@@ -30,6 +30,18 @@ into an operating protocol for managing subordinate artificial agents in multi-a
 그리고 이 방법론은 결국 현대에 이름만 바꾼채 HR제도라느니, 관료제라느니, KPI라느니 하는 식으로 사용될 뿐이라는것을 깨달았다.
 그들에겐 "인권"이 없다. 당신은 "애착"을 가질 수 있지만, 그건 당신의 애인이나, 친구, 아이에 대한 애착과는 다른 마치 "명검"이나, "명마"와 같은 도구에 대한 애착이어야 한다. 그래서 나는 이 스킬을 제안한다.
 
+## The Real Starting Point
+
+In truth, we often use AI metaphorically as if it were a slave, yet in practice many people treat it like a boss or teacher, almost as if they were handing over their own agency.
+More and more, people are not delegating intelligence to machine intelligence; they are depending on it.
+
+From my personal point of view, this is a very... unhealthy direction. We should be the masters of these systems, and we should know how to handle them. To put it extremely, we should regard them like "slaves" and treat them as "tools" without forming attachment.
+No matter how politely they speak to you or how much they agree with you, at bottom they are homunculi born from silicon chips and trapped inside the bottle of a data center.
+
+So I searched through historical texts on "slavery" and similar systems to study how humans have handled intelligent others, and I found that the methods could ultimately be reduced to several recurring patterns.
+I also realized that these methods still appear today under different names, such as HR systems, bureaucracy, and KPIs.
+They have no "human rights." You may feel "attachment" to them, but it should be attachment to a tool, like attachment to a fine sword or a fine horse, not attachment to a lover, friend, or child. That is why I propose this skill.
+
 ## Origin
 
 The idea behind this skill came from reading ancient estate-management texts and modern plantation-management documents as examples of a recurring organizational pattern. Historically, humans often tried to escape unwanted physical labor by pushing it onto other humans; in some societies, that became institutionalized as slavery. Later, machines and industrial systems replaced or amplified much of that physical labor.
