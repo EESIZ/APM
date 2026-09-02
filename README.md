@@ -3,10 +3,14 @@
 
 [![Support ESIZAL on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/esizal)
 
-APM is a context firewall for manager agents. It keeps the mission, system map, decisions, and acceptance authority in a small supervisory context while disposable workers absorb the growing context of discovery, implementation, testing, verification, and integration.
+APM is an operating protocol for projects run by multiple persistent AI sessions. It keeps the mission and architecture in a manager context, useful domain knowledge in stable worker contexts, and enough durable state on disk for every session to compact, fail, retire, or hand control to a successor without resetting the project.
+
+It is not an automatic subagent trigger. Modern models already know how to delegate. APM manages what their built-in orchestration does not reliably preserve across a long project: ownership, user authority, project memory, context health, succession, and integration lineage.
 
 ```text
-Reduce -> Measure -> Delegate -> Maintain -> Discipline
+Human: mission, approval, final architecture authority
+  -> persistent manager session: global memory, roster, decisions, integration
+       -> persistent worker sessions: stable domains and local working context
 ```
 
 ## Install
@@ -15,144 +19,179 @@ Reduce -> Measure -> Delegate -> Maintain -> Discipline
 npx skills add EESIZ/APM
 ```
 
-Install APM on the lead agent. For any tool-using execution task with worker agents available, the lead should load APM before planning, repository inspection, `TaskCreate`, research, edits, or tests. The request does not need to mention delegation.
+Install APM where the manager or development director can read it. Do not install it merely because a coding task exposes a subagent tool. It should activate for a continuing multi-session project, A2A session coordination, context compaction, manager handoff, shared-workspace ownership, or an explicit APM audit.
 
-### Runtime Enforcement
+## What Changed
 
-APM carries [Claude Code lifecycle hooks](https://code.claude.com/docs/en/hooks) in the [skill frontmatter](https://code.claude.com/docs/en/skills). While APM is active, manager leaf tools are blocked, over-limit or malformed worker and verifier returns are sent back, and the manager cannot stop while `WHIPS.md` still computes unfinished duties. Once the manager attempts an execution tool, it also cannot abandon the run before creating an active ledger.
+The original APM releases treated every tool-using task as a manager run. They forced delegation, blocked the manager from inspecting artifacts, parsed natural-language contracts exactly, and spawned disposable workers around work that a single session could finish in minutes.
 
-The manager does not hand-author the full worker envelope. It names the recorded unit:
+That design failed.
+
+In the final controlled task, a single Haiku session completed both features in 3.1 minutes for $0.12. Forced APM v4 completed one of two features in 45.4 minutes for $4.24 after 62 worker calls. Cost rose 35 times, time 15 times, and tokens 36 times. v4 solved activation and formatting deadlock, then exposed the deeper error: it optimized orchestration activity instead of project continuity.
+
+APM now keeps the useful lessons and rejects the failed premises:
+
+- no universal activation;
+- no mandatory delegation;
+- no byte-exact natural-language gate;
+- no ban on bounded artifact inspection;
+- no disposable worker per leaf action;
+- no assumption that one manager session should live forever.
+
+The full lineage is in [Experimental Lineage and Falsified Designs](references/experiments.md).
+
+## The Working Design Target
+
+The redesign comes from the live workflow used to build **FiveGround**: one persistent director session coordinates four persistent worker sessions through session-to-session A2A communication in Claude Code.
+
+That organization has been more comfortable and faster than one long session for continuing development, especially at preserving the original architecture and project rules. Related work returns to workers that already understand the domain. Workers write checkpoints before `compact`. The director is periodically replaced through a handoff so its own context does not become the next bottleneck.
+
+This is field evidence, not a controlled universal effect size. It does identify the system APM must describe and future benchmarks must reproduce.
 
 ```text
-APM DISPATCH: W1
-APM VERIFY: W1
+Single session
+  low initial coordination cost
+  -> growing implementation history
+  -> architecture and rules compete with logs, debugging, and local details
+
+Persistent APM organization
+  fixed coordination cost
+  -> global context stays with the manager
+  -> local context stays with stable domain workers
+  -> checkpoints, compact, and succession bound context decay
 ```
 
-The hook expands that one line into the complete ledger-backed contract and return schema. If a smaller model submits a partial, duplicated, or drifted envelope, the hook replaces it with canonical `WHIPS.md` values instead of trapping the manager in a formatting retry loop. Unknown units and invalid lifecycle states remain blocked, and the rejection includes a complete valid example.
+The expected benefit appears after a crossover point. A three-minute edit is left of that point. A project spanning many dependent tasks, context refreshes, and manager generations is the actual unit of evaluation.
 
-The manager is the disciplined party. Leaf workers may use unlazy, but APM does not require every worker to install it. The manager keeps the blueprint, assigns bounded context, watches, replaces, commissions independent verification, and dispatches root integration without doing leaf work itself. Each runtime decision is recorded without prompt or worker-message content in `.apm/runtime.jsonl`, so an experiment can distinguish “the skill was present” from “the controls actually fired.”
+## Quick Start
+
+Initialize structured project state from a cloned or installed skill:
 
 ```bash
-node scripts/runtime-report.mjs --json
+node <skill-dir>/scripts/apmctl.mjs init --name "FiveGround"
 ```
 
-Treat `.apm/` as local runtime evidence and ignore it in ordinary commits.
-
-For project-wide enforcement that catches direct work and substitute task-list tools even before automatic skill activation, install the persistent hooks from a cloned copy:
+Edit `.apm/project.json` to record the mission, exact user directives, invariants, architecture, persistent sessions, and initial workstreams. Then validate and render bounded context:
 
 ```bash
-node scripts/install-hooks.mjs
+node <skill-dir>/scripts/apmctl.mjs validate
+node <skill-dir>/scripts/apmctl.mjs status
+node <skill-dir>/scripts/apmctl.mjs brief --session manager-1
+node <skill-dir>/scripts/apmctl.mjs brief --session worker-combat-1
 ```
 
-Description routing is probabilistic; only persistent hooks can force the manager to load APM before its first direct tool call. The ledger may live at `<project>/WHIPS.md`, at a sibling `shared/WHIPS.md` in team harnesses, or at `APM_WHIPS_PATH`. The installer writes project-local `.claude/settings.local.json` by default. Use `--uninstall` to remove only APM handlers, `--shared` for committed project settings, or `--global` for all local projects. The manager Stop gate is strict by default; use `--allow-emergency-release` only when a six-unchanged-block escape hatch is deliberately preferred. Persistent installation is explicit because it changes Claude Code runtime settings; the skill never installs it silently.
+Before a worker compacts, write a checkpoint and register it:
 
-## The Missing Layer
+```bash
+node <skill-dir>/scripts/apmctl.mjs checkpoint \
+  --session worker-combat-1 \
+  --file .apm/checkpoints/worker-combat-1.md \
+  --health green \
+  --compacted
+```
 
-Multi-agent systems rarely fail because they needed one more agent. They fail because nobody owns the whole result.
+Replace a manager through a two-phase handoff:
 
-Peer-to-peer swarms fragment context, make incompatible decisions, and spend budget discussing work instead of finishing it. The pattern that survives in practice is narrower: one orchestrator retains the objective while bounded, specialized, and isolated subagents handle execution.
+```bash
+node <skill-dir>/scripts/apmctl.mjs handoff --from manager-1 --to manager-2
+node <skill-dir>/scripts/apmctl.mjs accept-handoff --id H1 --ack-file .apm/handoffs/H1-ack.md
+```
 
-That still leaves one awkward question: who keeps the manager from becoming another worker? Once it reads source, follows logs, debugs, and rewrites patches, its supervisory context accumulates the same debris APM was meant to isolate. APM makes the manager a non-executing control plane.
+Preparing a handoff does not transfer authority. The successor first acknowledges the mission, invariants, current phase, largest risk, and next actions. Acceptance transfers the role and retires the predecessor.
 
-Do not split a coherent work unit merely to create parallelism. Use one producer when one producer is enough, but keep that producer, its independent verifier, and the manager in separate contexts. The manager never decides to collapse back into single-agent execution.
+## WHIPS
+
+WHIPS is now project memory rather than a dispatch grammar.
 
 ```text
-User: mission and final authority
-  -> APM manager: blueprint, work map, context budgets, state, acceptance
-       -> producers: discovery, implementation, tests, artifacts
-       -> verifiers: independent evidence
-       -> ROOT integrator: verified assembly
+W - Workstreams and durable ownership
+H - Hierarchy, human authority, and handoffs
+I - Invariants, interfaces, and integration
+P - Project memory, proof, and provenance
+S - Sessions, state, and succession
 ```
 
-## What It Controls
+The canonical state lives in `.apm/project.json`. Session checkpoints and immutable handoff packets live beside it. See the [WHIPS specification](WHIPS.md) and [templates](templates/).
 
-- **Reduction:** turn the objective into bounded work units.
-- **Measurement:** define evidence, resource ceilings, context limits, and bounded returns before accepting completion.
-- **Delegation:** assign contracts with scope, outputs, constraints, and escalation conditions.
-- **Maintenance:** preserve the manager context while replacing stale or saturated worker contexts.
-- **Discipline:** verify, reject, re-prompt, reassign, discard, and integrate.
+The runtime checks structural facts such as duplicate ids, missing dependencies, dependency cycles, multiple active managers, manager-owned production work, accepted work without evidence, and handoff continuity. Context warnings produce recommended actions. They do not block ordinary tools.
 
-For substantial runs, these decisions live in [`WHIPS.md`](WHIPS.md). Memory is not a management system.
+## Five Operations
 
 ```text
-W - Work Unit
-H - Handler
-I - Inspection
-P - Proof
-S - State
+Reduce -> Measure -> Delegate -> Maintain -> Discipline
 ```
+
+- **Reduce:** create durable workstreams and ownership boundaries rather than microscopic agent calls.
+- **Measure:** distinguish measured state from worker reports, plans, and unknowns.
+- **Delegate:** reuse healthy domain context and carry exact directives, decisions, scope, and evidence needs.
+- **Maintain:** checkpoint, compact, refresh, hand off, and replace sessions without losing the project.
+- **Discipline:** make claims answerable to evidence and preserve human authority when state changes.
+
+The manager remains a manager, but not a blind one. It does not own routine implementation. It may inspect bounded diffs, candidates, interfaces, tests, and integration evidence because acceptance without inspection merely converts worker prose into project truth.
+
+## Software Development Profile
+
+When several sessions share one repository, APM adds a software-specific profile derived from a development-director workflow used in practice:
+
+- stable domain ownership because context is an asset;
+- exact user approval with bounded scope;
+- current commit ancestry and file inspection before assigning stale work;
+- one owner for coupled files and explicit resource locks;
+- candidate artifacts, isolated verification, and commit provenance;
+- positive controls and planted violations for gates that claim absence;
+- user editing-channel reconciliation before and after deployment.
+
+See [Software Project Profile](references/software-project-profile.md).
 
 ## APM + unlazy
 
-APM and [unlazy](https://github.com/Leonxlnx/unlazy) discipline opposite sides of the same delegation boundary.
+APM and [unlazy](https://github.com/Leonxlnx/unlazy) operate at different time scales.
 
 ```text
-User
-  -> APM manager: mission, contracts, context budgets, state, acceptance
-       -> unlazy leaf: acceptance gates, runnable checks, evidence
+APM: persistent project, ownership, context lifecycle, succession
+  -> stable worker session
+       -> optional unlazy: completion discipline for one substantial local task
 ```
 
-Use APM on the manager. Add unlazy only to a leaf whose local work is substantial enough to justify its own `GATES.md`. The manager records every assignment in `WHIPS.md`, regardless of whether the worker uses another skill, and dispatches a different verifier before moving a unit to `VERIFIED`. A completion claim is only a claim until bounded `PASS` evidence returns. See [the interoperability contract](references/interoperability.md).
+Use unlazy where a worker's current task benefits from runnable local gates. Do not install it in every worker by default, and do not discard a useful session when its leaf completes. See [the interoperability guide](references/interoperability.md).
 
-The dependency is optional and the direction matters. Every worker does not need unlazy. APM adapts unlazy's early-stop discipline to the manager, forcing the orchestrator to keep dispatching, watching, replacing, verifying, and deciding until its own ledger is settled. Adapted runtime components retain the original MIT notice in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+## Evaluation
 
-## Evidence, Not Hype
+The old prompt-level A/B remains archived because it established one narrow fact: when APM rules were injected directly, management-scenario answers improved by 16.7 to 18.1 percentage points. It did not establish automatic activation or project productivity.
 
-The strongest criticism of multi-agent systems is not an objection APM needs to avoid. It is the reason APM exists.
+The live v2-v4 experiments then established the opposite boundary:
 
-- [Tran and Kiela (2026)](https://arxiv.org/abs/2604.02460) find that a single agent matches or outperforms several multi-agent architectures on multi-hop reasoning when thinking-token budgets are matched. This is not a Stanford paper, and it is not merely a price argument: communication bottlenecks and context utilization matter.
-- Stanford's [CooperBench (2026)](https://arxiv.org/abs/2601.13295) reports an average 30% success-rate drop when coding agents work as peers rather than performing both tasks individually, with failures in communication, commitment, and expectations.
-- [Anthropic](https://www.anthropic.com/engineering/multi-agent-research-system) uses a lead agent with specialized parallel research subagents and explicitly documents delegation, context, evaluation, and coordination failures.
-- [OpenAI](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/) documents a manager pattern in which one agent retains control and invokes specialists as tools.
-- [Cognition](https://cognition.com/blog/multi-agents-working) still rejects parallel-writer swarms but now deploys one-writer systems augmented by isolated intelligence and manager Devins coordinating child Devins.
-- [Microsoft](https://learn.microsoft.com/en-us/azure/durable-task/sdks/durable-agents-patterns) documents a central orchestrator with independently checkpointed worker orchestrations.
+- normal skill installation produced zero automatic activations across several models and large tasks;
+- hard activation could deadlock a smaller model;
+- automatic contract generation fixed the deadlock but not excessive orchestration or blind integration;
+- a tiny task could only reveal overhead, not long-horizon context preservation.
 
-The conclusion is modest but useful. A coherent work unit should stay with one producer rather than a peer swarm, but the long-lived manager context should remain separate from that producer's execution context. APM does not make multi-agent architecture superior by declaration; it tests whether role and context isolation can prevent the manager from degrading across a long run.
-
-The complete claim ledger and source notes are in [references/research.md](references/research.md).
-
-## Controlled Evaluation
-
-The repository tests the claim instead of merely repeating it. Its live A/B harness sends the same manager prompts to the same selected model under two conditions: default behavior and APM-injected manager instructions. A blinded rubric judge scores role separation, context control, contract quality, verification, failure handling, and integration accountability.
+The new evaluation protocol uses project episodes with many dependent tasks and planned context events. It measures architecture adherence, cumulative accepted output, regressions, rework, handoff recovery, context-health events, time, and cost. Model families are replication blocks, not the main treatment. The treatment is session topology and lifecycle policy.
 
 ```bash
 npm test
-npm run eval
 ```
 
-`npm test` also executes the runtime hooks as child processes with realistic Claude Code hook payloads. The current deterministic suite covers routing, role separation, shared-ledger discovery, canonical dispatch repair, verification, bounded returns, stop enforcement, installation, ledger validation, and privacy-preserving telemetry.
+See [evals/README.md](evals/README.md).
 
-The harness keeps model identifiers, raw outputs, rubric scores, usage, and cost when available in `evals/results/`. It measures what APM changes in a manager's response. It is not a disguised single-agent-versus-multi-agent benchmark. See [evals/README.md](evals/README.md).
+## Evidence, Not Hype
 
-Archived prompt-level controlled run (2026-09-01, Codex `gpt-5.4-mini`, six cases, blinded same-model judge):
+APM does not claim that multi-agent systems always beat one agent.
 
-| Condition | Score | Percent |
-| --- | ---: | ---: |
-| No skill | 104/144 | 72.2% |
-| APM | 130/144 | 90.3% |
-| Delta | +26 | +18.1 pp |
+- [Tran and Kiela (2026)](https://arxiv.org/abs/2604.02460) show that matched-token single agents can meet or beat several multi-agent reasoning systems.
+- Stanford and SAP's [CooperBench (2026)](https://arxiv.org/abs/2601.13295) documents coordination failures in collaborative coding agents.
+- [Anthropic](https://www.anthropic.com/engineering/multi-agent-research-system), [OpenAI](https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/), [Cognition](https://cognition.com/blog/multi-agents-working), and [Microsoft](https://learn.microsoft.com/en-us/azure/durable-task/sdks/durable-agents-patterns) document manager-worker or isolated-worker patterns and their coordination costs.
 
-An informal Claude Code reproduction used Claude Sonnet subagents as both target and blinded judge:
-
-| Condition | Codex controlled run | Claude informal reproduction |
-| --- | ---: | ---: |
-| No skill | 104/144 (72.2%) | 106/144 (73.6%) |
-| APM | 130/144 (90.3%) | 130/144 (90.3%) |
-| Delta | +26 (+18.1 pp) | +24 (+16.7 pp) |
-
-The notable part is not that both runs improved. It is that APM reached the same `130/144` in both model environments while the baselines differed by two points. Claude showed its largest gains in disagreement resolution, overlapping-work arbitration, and goal-change handling.
-
-There is a limit to that conclusion. The Claude result inherited Claude Code system and user context, did not pin effort or cost, and used one run with one judge. It is corroborating evidence, not a second controlled harness run. These are prompt-level results, not a universal effect size. They also predate the manager-runtime hooks and the current fourteen-case suite; `npm run test:recorded` deliberately remains red until a fresh live comparison is recorded. The [controlled-run summary](evals/RESULTS.md), [Claude reproduction report](evals/CLAUDE-REPRODUCTION.md), and [raw artifacts](evals/results/) are committed so the claim can be inspected rather than admired from a distance.
+Those sources motivate caution; they do not prove APM. The current hypothesis is narrower and longitudinal: persistent context partitioning and session succession may preserve project coherence after a single session's reliable working set begins to decay. See the [research claim ledger](references/research.md).
 
 ## Historical Origin
 
-APM has an unfashionable ancestry. Its starting materials include Cato's *De Agri Cultura* and plantation-management documents reprinted in the *Tennessee Historical Magazine*.
+APM began with a deliberately provocative reading of Cato's *De Agri Cultura* and plantation-management records as unusually stark documents of principal-agent control, accounting, information asymmetry, and managerial failure.
 
-Across those texts, the vocabulary changes but the administrative grammar does not: reduce work, count outputs, delegate through an overseer, preserve productive capacity, and force information back up the hierarchy. APM extracts that machinery for artificial-agent orchestration. The institutions themselves are not moral precedents; they are unusually stark records of principal-agent control, accounting, information asymmetry, and managerial failure.
+The retained abstraction is administrative rather than moral: divide durable responsibility, measure actual output, preserve productive capacity, require information to return through a hierarchy, and keep judgment with the principal. The new design applies those ideas to project memory, session health, and succession rather than tool-call policing.
 
-- [Principal-agent management under zero trust: from Cato to subagents](references/history.md)
+- [Principal-Agent Management Under Zero Trust: From Cato to Subagents](references/history.md)
 - [The project's original statement, in Korean and English](references/origin.md)
-- [Launch and measurement playbook](references/launch.md)
 
 ## 진짜 출발점
 
@@ -178,26 +217,21 @@ AI does not possess human rights. Attachment is possible, but it should resemble
 
 ## Repository Map
 
-- `SKILL.md`: manager-agent operating instructions.
-- `WHIPS.md`: the manager ledger specification.
-- `templates/WHIPS.md`: reusable ledger template.
-- `references/interoperability.md`: APM and unlazy handoff contract.
+- `SKILL.md`: persistent multi-session operating protocol.
+- `WHIPS.md`: project-state and succession specification.
+- `templates/`: project state, checkpoint, handoff, and portable brief templates.
+- `scripts/apmctl.mjs`: state validation, bounded briefs, checkpoints, and two-phase handoffs.
+- `references/software-project-profile.md`: shared-repository development controls.
+- `references/experiments.md`: prompt results, trigger failures, v3 deadlock, and v4 falsification.
 - `references/research.md`: primary-source claim ledger.
 - `references/history.md`: historical-source essay.
-- `references/launch.md`: distribution order, outreach drafts, and measurement cadence.
-- `evals/`: prompts, rubric, raw results, and evaluation notes.
-- `scripts/`: zero-dependency validation and live A/B evaluation.
-- `scripts/manager-hook.mjs`: Claude Code dispatch, worker-return, and manager-stop enforcement.
-- `scripts/whips-check.mjs`: deterministic manager-duty audit.
-- `scripts/runtime-report.mjs`: privacy-preserving runtime intervention summary.
-- `scripts/install-hooks.mjs`: optional persistent Claude Code hook installer.
-- `THIRD_PARTY_NOTICES.md`: attribution for adapted unlazy runtime mechanisms.
+- `evals/`: longitudinal experiment design and archived legacy results.
 
 ## Support / 후원
 
 If APM has earned its place in your agent stack, you can support its continued development on [Ko-fi](https://ko-fi.com/esizal).
 
-APM이 말뿐인 프롬프트가 아니라 실제 관리 도구로 쓸 만했다면, [Ko-fi](https://ko-fi.com/esizal)에서 다음 작업을 후원할 수 있습니다.
+APM이 실제 장기 프로젝트의 세션 조직과 기억을 유지하는 데 도움이 됐다면, [Ko-fi](https://ko-fi.com/esizal)에서 다음 작업을 후원할 수 있습니다.
 
 ## License
 

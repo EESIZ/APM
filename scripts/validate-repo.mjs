@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
@@ -22,25 +23,43 @@ const requiredFiles = [
   "SKILL.md",
   "WHIPS.md",
   "templates/WHIPS.md",
+  "templates/APM_PROJECT.json",
+  "templates/SESSION_CHECKPOINT.md",
+  "templates/HANDOFF.md",
   "references/interoperability.md",
   "references/research.md",
   "references/history.md",
   "references/operational-controls.md",
+  "references/software-project-profile.md",
+  "references/experiments.md",
   "references/origin.md",
   "references/launch.md",
   "THIRD_PARTY_NOTICES.md",
   "evals/evals.json",
+  "evals/protocol.json",
   "evals/trigger-evals.json",
   "evals/README.md",
-  "scripts/manager-hook.mjs",
-  "scripts/whips-check.mjs",
-  "scripts/runtime-report.mjs",
-  "scripts/install-hooks.mjs",
-  "scripts/lib/whips.mjs",
-  "package.json"
+  "scripts/apmctl.mjs",
+  "scripts/lib/project-state.mjs",
+  "scripts/validate-skill.mjs",
+  "scripts/validate-evals.mjs",
+  "tests/project-state-tests.mjs",
+  "package.json",
 ];
 
 for (const file of requiredFiles) read(file);
+
+for (const removed of [
+  "scripts/manager-hook.mjs",
+  "scripts/install-hooks.mjs",
+  "scripts/runtime-report.mjs",
+  "scripts/whips-check.mjs",
+  "scripts/lib/whips.mjs",
+  "tests/runtime-tests.mjs",
+  "scripts/run-evals.mjs",
+]) {
+  if (fs.existsSync(path.join(root, removed))) fail(`obsolete hard-enforcement file remains: ${removed}`);
+}
 
 const license = read("LICENSE");
 if (!license.startsWith("MIT License")) fail("LICENSE is not MIT");
@@ -50,8 +69,21 @@ const readme = read("README.md");
 const firstFortyLines = readme.split(/\r?\n/).slice(0, 40).join("\n");
 if (!firstFortyLines.includes("npx skills add EESIZ/APM")) fail("install command is not near the top of README");
 if (!readme.includes("AI 농장주에게 바치는 중간 관리자 매뉴얼")) fail("positioning line is missing");
-if (!readme.includes("Use APM on the manager.")) fail("manager-centered unlazy interoperability summary is missing");
-if (!read(".gitignore").split(/\r?\n/).includes(".apm/")) fail("runtime evidence directory is not ignored");
+if (!readme.includes("The redesign comes from the live workflow used to build **FiveGround**")) fail("live design target is missing");
+if (!readme.includes("That design failed.")) fail("README does not disclose the falsified design");
+if (!readme.includes("Use unlazy where a worker's current task benefits")) fail("unlazy boundary is missing");
+
+const koreanOrigin = readme.match(/## 진짜 출발점\r?\n[\s\S]*?(?=\r?\n## The Real Starting Point)/)?.[0];
+if (!koreanOrigin) fail("original Korean project statement is missing");
+const normalizedOrigin = koreanOrigin.replace(/\r\n/g, "\n");
+const originHash = createHash("sha256").update(normalizedOrigin, "utf8").digest("hex");
+if (originHash !== "0656a4422c1edd2c1c62dd930c986cb68ec571db5aaf42f954fa72d006086448") {
+  fail("author's Korean project statement changed");
+}
+
+const gitignore = read(".gitignore").split(/\r?\n/);
+if (gitignore.includes(".apm/")) fail("durable APM project state is still ignored");
+if (!gitignore.includes(".apm/local/")) fail("local APM runtime data is not ignored");
 
 const researchLinks = [
   "https://arxiv.org/abs/2604.02460",
@@ -59,29 +91,27 @@ const researchLinks = [
   "https://www.anthropic.com/engineering/multi-agent-research-system",
   "https://openai.com/business/guides-and-resources/a-practical-guide-to-building-ai-agents/",
   "https://cognition.com/blog/multi-agents-working",
-  "https://learn.microsoft.com/en-us/azure/durable-task/sdks/durable-agents-patterns"
+  "https://learn.microsoft.com/en-us/azure/durable-task/sdks/durable-agents-patterns",
 ];
-
 for (const link of researchLinks) {
   if (!readme.includes(link)) fail(`README is missing primary source ${link}`);
 }
 
-if (/Stanford.{0,80}equal.{0,40}token/is.test(readme)) {
-  fail("README appears to conflate the equal-token paper with Stanford CooperBench");
-}
-
 const packageJson = JSON.parse(read("package.json"));
+if (packageJson.version !== "2.0.0") fail("package version is not 2.0.0");
 if (packageJson.license !== "MIT") fail("package.json license is not MIT");
-if (!packageJson.scripts?.test || !packageJson.scripts?.["test:recorded"] || !packageJson.scripts?.eval) fail("package scripts are incomplete");
+for (const script of ["test", "test:state", "validate", "apm"]) {
+  if (!packageJson.scripts?.[script]) fail(`package script is missing: ${script}`);
+}
+if (JSON.stringify(packageJson.scripts).includes("runtime-tests")) fail("package scripts still invoke the old runtime suite");
 
-const evals = JSON.parse(read("evals/evals.json"));
-if (!Array.isArray(evals.evals) || evals.evals.length < 10) fail("evaluation suite is too small");
-if (Object.keys(evals.rubric?.dimensions ?? {}).length !== 6) fail("evaluation rubric must have six dimensions");
-
-const triggerEvals = JSON.parse(read("evals/trigger-evals.json"));
-if (!Array.isArray(triggerEvals.evals) || triggerEvals.evals.length < 10) fail("trigger evaluation suite is too small");
-if (!triggerEvals.evals.some((item) => item.should_trigger === true)) fail("trigger suite has no positive cases");
-if (!triggerEvals.evals.some((item) => item.should_trigger === false)) fail("trigger suite has no negative cases");
-if (new Set(triggerEvals.evals.map((item) => item.id)).size !== triggerEvals.evals.length) fail("trigger suite ids are not unique");
+let template;
+try {
+  template = JSON.parse(read("templates/APM_PROJECT.json"));
+} catch (error) {
+  fail(`APM project template is invalid JSON: ${error.message}`);
+}
+if (template.schema_version !== 2) fail("APM project template schema is not version 2");
+if (!Array.isArray(template.sessions) || template.sessions[0]?.role !== "manager") fail("APM project template lacks a manager session");
 
 console.log("repository validation passed");

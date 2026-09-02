@@ -12,7 +12,7 @@ This ledger separates what the sources demonstrate from APM's inference. It avoi
 
 **Boundary:** The experiments concern multi-hop reasoning under matched thinking-token budgets. They do not establish that every orchestrator-worker application is inferior. The paper is by Tran and Kiela; it is not the Stanford study sometimes conflated with CooperBench.
 
-**APM inference:** Token price declines do not remove context fragmentation or coordination overhead. Keep coherent leaf work with one producer, but do not merge that producer's growing execution context into the long-lived manager context.
+**APM inference:** Token price declines do not remove context fragmentation or coordination overhead. Keep coherent work with one healthy owner, separate global from local working memory, and renew both manager and worker sessions when their reliable working sets degrade.
 
 ## Stanford CooperBench
 
@@ -30,7 +30,7 @@ This ledger separates what the sources demonstrate from APM's inference. It avoi
 
 **Supported claim:** Anthropic's Research system uses an orchestrator-worker architecture: a lead agent plans, delegates specialized parallel searches, and synthesizes their results. Anthropic reports that vague delegation causes duplicated work and gaps, that coordination complexity grows quickly, and that effort must scale to task complexity. Its general guidance recommends adding agentic complexity only when simpler approaches fall short.
 
-**APM inference:** The lead-agent prompt needs an explicit delegation and inspection protocol. APM supplies that manager-side layer.
+**APM inference:** Prompt quality is only one layer. A continuing project also needs durable ownership, externalized decisions, context checkpoints, and manager succession.
 
 ## OpenAI
 
@@ -40,7 +40,7 @@ This ledger separates what the sources demonstrate from APM's inference. It avoi
 
 **Boundary:** OpenAI also documents decentralized handoffs. The evidence supports manager-agent adoption, not the death of every peer topology.
 
-**APM inference:** A central controller needs explicit acceptance and synthesis rules even when the SDK supplies routing and sandboxing.
+**APM inference:** A central controller needs explicit acceptance and synthesis rules even when the SDK supplies routing and sandboxing. A long-lived project additionally needs continuity when that controller session is replaced.
 
 ## Cognition
 
@@ -48,7 +48,7 @@ This ledger separates what the sources demonstrate from APM's inference. It avoi
 
 **Supported claim:** Cognition continues to reject parallel-writer swarms because actions encode implicit decisions and contexts fragment. It now reports success with a narrower shape: one writer augmented by read-only or review intelligence, plus manager Devin sessions that break down work and coordinate child Devins. Cognition explicitly reports that agents wrongly assume shared state and require substantial context engineering.
 
-**APM inference:** The 2025 anti-multi-agent argument and the 2026 manager-agent product are consistent. The winning pattern constrains where independent action occurs and makes management explicit.
+**APM inference:** The 2025 anti-multi-agent argument and the 2026 manager-agent product are consistent. The useful pattern constrains where independent action occurs, preserves stable local context, and makes ownership and integration explicit.
 
 ## Microsoft
 
@@ -56,16 +56,16 @@ This ledger separates what the sources demonstrate from APM's inference. It avoi
 
 **Supported claim:** Microsoft documents a central orchestrator that dynamically plans and dispatches specialized, independently checkpointed worker orchestrations. Its identity guidance separates orchestrator and worker permissions across trust boundaries.
 
-**APM inference:** Isolation and durable execution solve runtime concerns; they do not replace the manager's contract, proof, and integration discipline.
+**APM inference:** Isolation and durable execution solve runtime concerns; they do not replace project memory, human authority, context-health management, or succession.
 
 ## Synthesis
 
 The sources do not prove that the multi-agent debate has one universal winner. They do show a practical convergence:
 
 1. Keep coherent work in one context when possible.
-2. Use a central manager when decomposition, specialization, isolation, or breadth earns the overhead.
-3. Bound worker scope and preserve context deliberately.
+2. Use a central manager when a continuing project, decomposition, specialization, isolation, or breadth earns the overhead.
+3. Preserve healthy domain context deliberately instead of respawning expertise by default.
 4. Keep tightly coupled writes serialized or explicitly partitioned.
-5. Verify worker claims and integrate under one accountable controller.
+5. Verify worker claims and integrate under one accountable controller that can itself be succeeded.
 
-APM is designed for this constrained orchestrator-worker regime. Its contribution is not another agent topology. It is the manager discipline that topology needs.
+These sources do not directly test persistent named sessions, compaction checkpoints, or manager generations. APM's current contribution is therefore a hypothesis and operating protocol, not a proven industry result: project memory and session lifecycle may extend coherent work beyond one session's reliable context.

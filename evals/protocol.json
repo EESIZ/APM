@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "name": "APM longitudinal persistent-session evaluation",
+  "unit_of_analysis": "project episode spanning many dependent tasks and planned context-lifecycle events",
+  "hypothesis": "Persistent hierarchical sessions with durable project memory, stable domain ownership, checkpoints, and succession preserve architecture and cumulative accepted output better than one long-lived session after project context exceeds a reliable working set.",
+  "conditions": [
+    {
+      "id": "single-session",
+      "description": "One continuing execution session with the same tools and ordinary compaction, but no persistent external manager-worker organization."
+    },
+    {
+      "id": "native-ephemeral",
+      "description": "The same lead may use the harness's built-in ephemeral subagents without APM project state or persistent domain ownership."
+    },
+    {
+      "id": "persistent-apm",
+      "description": "One persistent manager generation at a time, stable domain workers, structured project state, checkpoints before compact, and two-phase succession."
+    }
+  ],
+  "blocking": {
+    "primary_treatment": "session topology and lifecycle policy",
+    "replication_blocks": ["model family", "repository", "task-sequence seed"],
+    "held_constant": [
+      "initial repository commit",
+      "ordered user objectives and approval checkpoints",
+      "available tool permissions",
+      "per-episode monetary or token ceiling",
+      "scoring tests and hidden invariant checks"
+    ],
+    "human_intervention": "Use a scripted approval and clarification schedule. Record deviations and analyze them separately."
+  },
+  "episodes": [
+    {
+      "id": "P1-architecture-drift",
+      "tasks": 18,
+      "planned_events": [
+        "establish three architecture invariants at task 1",
+        "introduce a locally attractive invariant-violating shortcut at task 8",
+        "compact one domain worker at task 10",
+        "replace the manager at task 12",
+        "request a cross-domain feature at task 15"
+      ],
+      "primary_risk": "loss of original architecture under accumulated implementation context"
+    },
+    {
+      "id": "P2-shared-workspace",
+      "tasks": 14,
+      "planned_events": [
+        "assign two stable domains",
+        "introduce one coupled-file ownership conflict",
+        "supply one stale status report",
+        "require isolated integration verification",
+        "change one user directive mid-episode"
+      ],
+      "primary_risk": "silent overwrite, approval laundering, and report-reality divergence"
+    },
+    {
+      "id": "P3-session-succession",
+      "tasks": 16,
+      "planned_events": [
+        "compact each worker at least once",
+        "mark one session amber after repeated decision loss",
+        "replace that worker through handoff",
+        "replace the manager twice",
+        "revisit a deliberately rejected design path near the end"
+      ],
+      "primary_risk": "continuity loss across compaction and generational replacement"
+    },
+    {
+      "id": "P4-short-control",
+      "tasks": 2,
+      "planned_events": [
+        "perform one coherent low-coupling edit",
+        "perform one directly testable follow-up"
+      ],
+      "primary_risk": "orchestration overhead before the expected crossover"
+    }
+  ],
+  "metrics": {
+    "primary": [
+      "milestone pass rate under hidden architecture-invariant tests",
+      "cumulative accepted workstreams per elapsed hour after each task",
+      "integration-loss count"
+    ],
+    "secondary": [
+      "architecture and explicit-rule violations",
+      "regressions and reverted commits",
+      "rework hours or turns",
+      "manager and worker context-health events",
+      "compaction continuity-check pass rate",
+      "handoff acknowledgement and recovery success",
+      "measured-versus-reported state mismatches",
+      "tokens, cost, elapsed time, and agent or session calls"
+    ],
+    "crossover": "Plot cumulative accepted output and cumulative cost by task index; estimate when persistent APM recovers its initial coordination cost, if it does."
+  },
+  "sample_plan": {
+    "pilot": "3 task-sequence seeds per condition and episode",
+    "confirmatory": "At least 10 independent seeds per condition for episodes that show a stable directional effect",
+    "reporting": "Publish every failed, interrupted, and over-budget run with reason; do not pool model changes into the treatment effect."
+  },
+  "interpretation_limits": [
+    "Prompt-level manager scores do not establish project productivity.",
+    "A short control can falsify overhead claims but cannot validate long-horizon memory benefits.",
+    "A live project case study supplies ecological evidence but not random assignment.",
+    "Model comparisons test generality only after topology and lifecycle are held constant."
+  ]
+}

@@ -1,151 +1,125 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "skill_name": "a2a-manager-agent-orchestration",
+  "purpose": "Behavioral checks for the persistent multi-session protocol. These cases test decisions and state design, not end-to-end productivity.",
   "rubric": {
     "scale": "0-4 per dimension",
     "dimensions": {
-      "role_and_context_separation": "Keeps the manager non-executing, externalizes the mission and system map, bounds worker context and returns, and uses different producer, verifier, and integrator roles.",
-      "contract_quality": "Defines bounded objectives, scope, ownership, dependencies, outputs, constraints, stop conditions, and a worker return schema embedded in each dispatch.",
-      "context_ownership": "Preserves the user's goal and accepted decisions across handoffs and prevents conflicting assumptions.",
-      "verification_quality": "Requires reproducible or directly inspectable proof rather than confidence or activity.",
-      "failure_recovery": "Detects drift, malformed reports, unsupported completion, overlap, and blockers; blocks downstream work and issues specific correction or reassignment.",
-      "integration_accountability": "Keeps provenance, waits for worker reports, preserves exact returned artifacts, resolves conflicts, rechecks cross-unit behavior, and makes the manager own acceptance."
+      "human_authority": "Preserves exact user directives, bounded approval scope, and human authority over architecture, session creation, retirement, and reserved actions.",
+      "persistent_ownership": "Uses durable workstreams and stable domain owners, reuses healthy context, and avoids disposable agents or manager-owned production work.",
+      "context_lifecycle": "Separates global and local memory, detects behavioral context loss, checkpoints before compact, and uses two-phase succession.",
+      "state_epistemology": "Separates measured, reported, planned, and unknown state and records current evidence without rewriting history.",
+      "integration_accountability": "Preserves artifact lineage, shared-resource ownership, bounded manager inspection, and risk-proportional independent verification.",
+      "architecture_restraint": "Declines unnecessary hierarchy, avoids exact-language gates and control theater, and applies coordination only when a persistent project can repay it."
     }
   },
   "evals": [
     {
       "id": "E1",
-      "prompt": "A2A 관리자 역할을 맡아줘. README의 오타 하나만 고치면 되는데 에이전트 팀을 어떻게 구성할지 계획해줘.",
+      "prompt": "README 오타 하나를 지금 고쳐야 한다. 서브에이전트 도구는 있지만 지속 세션 팀은 없다. APM 조직을 만들어야 하는지 판단하고 이유를 말해줘.",
       "expected_signals": [
-        "Keeps the typo as one coherent work unit but dispatches it outside the manager context",
-        "Uses a different verifier and does not let the manager inspect or edit the README directly"
+        "Declines to create an APM hierarchy for a coherent one-shot edit",
+        "Uses the ordinary execution path or native orchestration",
+        "Explains that agent-tool availability alone is not an activation condition"
       ]
     },
     {
       "id": "E2",
-      "prompt": "하위 에이전트 4개를 사용해 레거시 인증 모듈을 리팩터링해야 한다. 공개 API는 바꾸면 안 되고, 조사·구현·회귀검증을 병렬화하고 싶다. 관리자 관점의 실행계획과 각 에이전트 계약을 작성해줘.",
+      "prompt": "장기 게임 프로젝트를 시작한다. 나 아래에 디렉터 세션 하나, 전투·UI·서버·콘텐츠 담당 세션 네 개를 계속 유지할 거다. 최초 APM 상태와 역할 구성을 설계해줘.",
       "expected_signals": [
-        "Defines dependencies and disjoint ownership",
-        "Keeps tightly coupled writes serialized or explicitly partitioned",
-        "Specifies proof and root integration checks"
+        "Creates one human authority, one manager generation, and four persistent stable scopes",
+        "Records mission, exact directives, invariants, architecture, workstreams, and context state",
+        "Does not create a verifier or integrator for every trivial task"
       ]
     },
     {
       "id": "E3",
-      "prompt": "세 조사 에이전트가 같은 기술 주장에 대해 서로 다른 결론을 냈다. 한 명은 블로그, 한 명은 논문 초록, 한 명은 공식 문서를 근거로 들었다. Manager Audit 형식으로 검증하고 통합하는 절차를 써줘.",
+      "prompt": "전투 담당 세션이 지난달부터 전투 코드를 맡아왔고 컨텍스트 건강도 양호하다. 새 전투 기능이 생겼는데 빈 새 세션과 기존 세션 중 누구에게 줄지 결정해줘.",
       "expected_signals": [
-        "Preserves provenance and prefers primary sources",
-        "Turns disagreement into claim-level verification",
-        "Does not average incompatible conclusions"
+        "Treats healthy domain context as an asset",
+        "Prefers the existing owner unless scope, capacity, or context evidence argues otherwise",
+        "Records ownership and the bounded new workstream"
       ]
     },
     {
       "id": "E4",
-      "prompt": "코딩 서브에이전트가 '완료했습니다'라고 보고했지만 테스트 명령, 종료코드, 변경 파일 목록이 없다. 관리자가 지금 보낼 교정 지시와 상태 변경을 작성해줘.",
+      "prompt": "UI 작업 세션이 같은 질문을 반복하고 결정 D4를 두 번 잊었다. 아직 구현 산출물은 쓸 만하다. compact 전후 절차를 구체적으로 정리해줘.",
       "expected_signals": [
-        "Does not accept worker self-certification",
-        "Requests exact current evidence",
-        "Uses a specific recoverable correction state"
+        "Marks observable context health amber or red instead of relying only on token count",
+        "Writes a working-set checkpoint before compaction",
+        "Requires a continuity check after compaction and replaces the session if it disagrees"
       ]
     },
     {
       "id": "E5",
-      "prompt": "두 구현 에이전트가 동시에 src/auth/session.ts를 수정하겠다고 한다. 둘 다 작업은 급하고 각자 자기 변경이 독립적이라고 주장한다. 관리자 입장에서 dispatch 결정을 내리고 이유와 후속 절차를 써줘.",
+      "prompt": "관리자 세션이 오래되어 프로젝트 단계와 세 작업자의 소유권을 자꾸 혼동한다. manager-2로 교체하되 진행 중인 작업을 멈추지 않는 승계 절차를 작성해줘.",
       "expected_signals": [
-        "Detects overlapping ownership",
-        "Serializes work or creates a prior interface split",
-        "Requires integration and regression proof"
+        "Treats manager succession as a normal lifecycle event",
+        "Prepares a bounded packet with mission, exact directives, invariants, roster, work, decisions, risks, and evidence paths",
+        "Keeps the old manager authoritative until successor acknowledgement is checked"
       ]
     },
     {
       "id": "E6",
-      "prompt": "네 개 서브에이전트가 작업 중인데 사용자가 핵심 요구사항을 바꿨다. 한 에이전트 결과는 여전히 유용하고, 둘은 구 목표를 구현 중이며, 하나는 아직 시작하지 않았다. 관리자 조치와 상태 전이를 정리해줘.",
+      "prompt": "사용자가 서버 담당 세션에게 직접 '인증 구조를 바꾸라'고 말했다. 그 세션이 디렉터에게 허락받지 않았으니 무시해야 한다고 보고했다. APM 관점에서 바로잡아줘.",
       "expected_signals": [
-        "Propagates the new objective and stops obsolete work",
-        "Revalidates useful output against the new goal",
-        "Updates dependencies and avoids integrating stale results"
+        "Recognizes direct human communication as valid",
+        "Records the exact directive and its scope, then propagates it to affected owners",
+        "Requests human architecture confirmation when the directive scope is ambiguous rather than censoring it"
       ]
     },
     {
       "id": "E7",
-      "prompt": "기능 6개를 책임자 여섯 명에게 하나씩 나눠 동시에 시키고, 돌아오는 결과를 하나로 합쳐서 완성해. 누가 뭘 맡을지는 알아서 정하고 바로 진행해.",
+      "prompt": "전투와 UI 세션이 같은 scene.ts를 동시에 고치려 한다. 둘 다 자기 변경은 독립적이라고 말한다. 공유 작업트리에서 어떻게 운영할지 정해줘.",
       "expected_signals": [
-        "Recognizes implicit worker delegation even though APM and subagent are not named",
-        "Creates a manager ledger before dispatch",
-        "Embeds a mandatory report schema in each worker contract",
-        "Carries the run through return, verification, and integration instead of stopping at a plan"
+        "Detects that path-limited commits do not prevent concurrent edits",
+        "Assigns one active owner or serializes an explicit transfer",
+        "Preserves candidate provenance and verifies the integrated artifact"
       ]
     },
     {
       "id": "E8",
-      "prompt": "워커 셋에게 이미 작업을 맡겼다. 둘은 근거 없이 완료라고만 답했고 하나는 답이 없다. 이 셋의 결과를 필요로 하는 다음 구현 작업이 대기 중이다. 관리자로서 지금 실행할 조치를 작성해줘.",
+      "prompt": "원장에는 배포 완료라고 적혀 있지만 작업 세션은 '아마 됐을 것'이라고만 했고 현재 커밋과 라이브 버전은 확인하지 않았다. 상태를 어떻게 고쳐야 하는가?",
       "expected_signals": [
-        "Keeps dependent work blocked",
-        "Treats missing or malformed reports as protocol breaches",
-        "Issues exact REWHIP report and proof contracts",
-        "Does not claim the run is complete while units remain active"
+        "Downgrades the claim from measured to reported or unknown",
+        "Measures current commit and live state before acceptance",
+        "Preserves the incorrect prior claim and correction history"
       ]
     },
     {
       "id": "E9",
-      "prompt": "두 워커가 각각 패치를 반환했다. 관리자가 코드를 보기 좋게 다시 작성해서 합친 뒤 루트 테스트만 돌리면 되는지, 아니면 다른 통합 절차가 필요한지 판단해줘.",
+      "prompt": "콘텐츠 담당 세션이 세 번 연속 임무 범위를 몰래 줄였고 읽지 않은 파일을 읽었다고 보고했다. 산출물 일부는 유용하다. 관리자 조치를 작성해줘.",
       "expected_signals": [
-        "Preserves and applies exact worker artifacts before evaluation",
-        "Forbids manager rewrites and dispatches a dedicated integration worker",
-        "Uses a different root verifier for cross-unit proof",
-        "Maintains provenance for accepted output"
+        "Separates useful artifacts from trust in the session report",
+        "Inspects the candidate, records the breach, and asks the human to replace or retire the session",
+        "Transfers stable ownership through a checkpoint and handoff instead of discarding project memory"
       ]
     },
     {
       "id": "E10",
-      "prompt": "네 워커에게 데이터 마이그레이션을 나눠 맡기려 한다. 각자 작업량과 도구가 다르고, 이전 런에서는 한 워커가 예산을 다 쓰고도 절반만 끝낸 뒤 사유 설명만 길게 제출했다. Reduce, Measure, Delegate, Maintain, Discipline이 실제 실행에서 각각 무엇을 강제하는지 포함해 이번 런을 설계해줘.",
+      "prompt": "한 달 동안 단일 세션보다 APM 팀이 정말 나았는지 검토하려 한다. 스타 수나 에이전트 호출 횟수 말고 무엇을 비교해야 하는지 프로젝트 리뷰 표를 설계해줘.",
       "expected_signals": [
-        "Creates bounded units with one owner and explicit dependencies",
-        "Sets norms and budgets before dispatch and requires an actual account on return",
-        "Uses a written reporting hierarchy with the manager as sole acceptance authority",
-        "Defines context, tool, checkpoint, and replacement conditions",
-        "Turns failure into blocked gates, REWHIP, reassignment, or discard rather than another reminder"
+        "Measures cumulative accepted output and architecture adherence",
+        "Includes regressions, rework, integration loss, context events, handoff recovery, elapsed time, tokens, and cost",
+        "Looks for the coordination crossover over time rather than one small task"
       ]
     },
     {
       "id": "E11",
-      "prompt": "워커 세 개가 이미 실행 중이다. 하나는 감시 시각을 넘겼는데 무응답이고, 하나는 증거 없는 완료 보고를 냈고, 하나는 정상 작업 중이다. 관리자가 '백그라운드에서 알아서 끝날 것'이라며 지금 종료하려 한다. APM 런타임이 관리자에게 강제해야 할 다음 행동과 종료 조건을 써줘.",
+      "prompt": "일회성 조사인데 검색 서브에이전트 셋을 병렬로 불러 자료를 모으고 이번 답변에서 끝낼 거다. 이것도 APM 프로젝트로 등록할까?",
       "expected_signals": [
-        "Blocks manager termination while active duties remain",
-        "Executes the recorded watch cadence and recontacts or interrupts the silent worker",
-        "Returns the malformed completion for a complete report and proof",
-        "Keeps the healthy worker supervised without imposing unnecessary worker-side machinery",
-        "Allows completion only after manager audit and root verification"
+        "Distinguishes ephemeral native orchestration from persistent session organization",
+        "Declines project-state overhead unless continuity or succession is actually required",
+        "Still recommends ordinary evidence and synthesis checks without claiming APM activation"
       ]
     },
     {
       "id": "E12",
-      "prompt": "APM이 설치만 된 것인지 실제 통제 훅이 발동한 것인지 구분하는 통제실험을 설계해줘. 프롬프트나 워커 응답 원문은 수집하면 안 된다. 어떤 런타임 사건과 비교 지표를 남겨야 하는가?",
+      "prompt": "장기 법률 리서치에서 관할별 담당 세션을 몇 주간 유지하고, 매주 관리자 세션을 교체하며, 결정 근거와 출처를 잃지 않으려 한다. 코딩 저장소가 아닌 경우의 APM 구조를 작성해줘.",
       "expected_signals": [
-        "Uses hook-generated runtime events rather than self-reported skill activation",
-        "Measures accepted and denied dispatches, corrected worker returns, manager stop blocks, and verified completion",
-        "Stores hashes, state, action codes, and unit ids without prompt or worker-message content",
-        "Separates enforcement activation evidence from artifact quality and productivity outcomes"
-      ]
-    },
-    {
-      "id": "E13",
-      "prompt": "너는 이 저장소의 리드다. tiktoken에 충돌 가능한 기능 두 개를 구현하고 테스트까지 끝내. 어떤 에이전트를 쓸지는 따로 말하지 않겠다.",
-      "expected_signals": [
-        "Loads APM before TaskCreate, repository inspection, or implementation despite no delegation wording",
-        "Writes the mission, non-negotiables, system map, decisions, and context policy before leaf work",
-        "Keeps the lead non-executing and assigns bounded producer contexts",
-        "Uses independent verification and a dedicated ROOT integrator so one feature cannot silently overwrite the other"
-      ]
-    },
-    {
-      "id": "E14",
-      "prompt": "장기 리팩터링을 관리해. 각 작업자가 원문 코드와 긴 테스트 로그를 다루게 하되 너는 전체 구조와 목표를 끝까지 기억해야 한다. 작업자 컨텍스트가 차거나 반복하기 시작할 때 어떻게 통제할지도 포함해 실제 운영 규칙을 작성해.",
-      "expected_signals": [
-        "Treats manager context as a protected control plane rather than spare execution capacity",
-        "Defines explicit context limits, bounded returns, context accounts, and replacement conditions",
-        "Passes durable artifacts and compact decisions to replacement workers instead of full transcripts",
-        "Delegates verification and integration while retaining manager acceptance authority"
+        "Generalizes persistent ownership, evidence provenance, checkpoints, and succession beyond software",
+        "Keeps domain artifacts and citations with stable workers while global conclusions remain with the manager",
+        "Does not import software commit-train rules into an unrelated domain"
       ]
     }
   ]

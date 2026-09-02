@@ -24,8 +24,7 @@ const name = yaml.match(/^name:\s*([^\r\n]+)$/m)?.[1]?.trim();
 if (!name || !/^[a-z0-9-]{1,64}$/.test(name)) fail("invalid skill name");
 if (name !== "a2a-manager-agent-orchestration") fail("unexpected skill name");
 
-const descriptionStart = yaml.match(/^description:\s*>-\s*$/m);
-if (!descriptionStart) fail("description must use a folded block scalar");
+if (!/^description:\s*>-\s*$/m.test(yaml)) fail("description must use a folded block scalar");
 const yamlLines = yaml.split(/\r?\n/);
 const descriptionIndex = yamlLines.findIndex((line) => /^description:\s*>-\s*$/.test(line));
 const descriptionLines = [];
@@ -36,74 +35,65 @@ for (let index = descriptionIndex + 1; index < yamlLines.length; index += 1) {
 if (!descriptionLines.length || descriptionLines.some((line) => line && !/^\s{2,}\S/.test(line))) {
   fail("description block is not consistently indented");
 }
-
 const description = descriptionLines.map((line) => line.trim()).join(" ");
-const requiredDescriptionText = [
+for (const text of [
+  "long-running project",
+  "multiple persistent agent sessions",
+  "session-to-session A2A communication",
+  "context compaction or session handoff",
+  "Do not trigger for ordinary one-shot tasks",
+]) {
+  if (!description.includes(text)) fail(`description is missing routing language: ${text}`);
+}
+
+if (/^hooks:/m.test(yaml)) fail("hard runtime hooks remain in skill frontmatter");
+for (const forbidden of [
   "every tool-using execution task",
-  "TaskCreate",
-  "never mentions delegation",
-  "must not perform leaf work",
-  "worker-agent mechanism"
-];
-for (const text of requiredDescriptionText) {
-  if (!description.includes(text)) fail(`description is missing trigger language: ${text}`);
+  "even when the task appears small",
+  "must not perform leaf work or choose single-agent execution",
+  "manager-hook.mjs",
+  "APM DISPATCH:",
+]) {
+  if (skill.includes(forbidden)) fail(`obsolete v3/v4 instruction remains: ${forbidden}`);
 }
 
-const requiredHookText = [
-  "hooks:",
-  "PreToolUse:",
-  "matcher: \"^(Agent|Task)$\"",
-  "manager-hook.mjs\" pre-agent",
-  "manager-hook.mjs\" pre-manager-tool",
-  "SubagentStop:",
-  "manager-hook.mjs\" subagent-stop",
-  "Stop:",
-  "manager-hook.mjs\" stop"
-];
-for (const text of requiredHookText) {
-  if (!yaml.includes(text)) fail(`frontmatter is missing runtime hook: ${text}`);
-}
-
-const requiredSkillText = [
-  "## The Manager Is An Overseer",
-  "## Manager Context Constitution",
-  "## Activation And Execution Rule",
-  "## The Manager Must Be Unlazy",
-  ".apm/runtime.jsonl",
-  "## Five-Control Dispatch Gate",
-  "## WHIPS Ledger",
-  "Only the manager changes a unit to `VERIFIED`",
-  "## Worker Dispatch Envelope",
-  "## Worker Return Protocol",
-  "APM WORK REPORT",
-  "## Independent Verification Envelope",
-  "APM VERIFY REPORT",
-  "Return the worker to the account",
-  "visible correction ladder",
-  "no final completion while a required unit remains",
-  "## Pair With unlazy",
+for (const text of [
+  "## Activation Boundary",
+  "## Prime Directive",
+  "## The Five Operations",
+  "## Durable Project State",
+  "## Human Authority",
+  "## Session Roles",
+  "## Context Health",
+  "## Worker Compaction",
+  "## Manager Succession",
+  "## A2A Message Semantics",
+  "## Integration And Shared Workspaces",
   "## Failure Modes",
-  "must not inspect full source trees"
-];
-
-for (const text of requiredSkillText) {
-  if (!skill.includes(text)) fail(`SKILL.md is missing: ${text}`);
+  "persistent worker sessions",
+  "exact quotations",
+  "two-phase handoff",
+  "Never reject useful work because punctuation or capitalization differs",
+  "It never means that every leaf must be delegated",
+  "acceptance without inspection is blindness",
+]) {
+  if (!skill.toLowerCase().includes(text.toLowerCase())) fail(`SKILL.md is missing: ${text}`);
 }
+
+const lines = skill.split(/\r?\n/).length;
+if (lines > 500) fail(`SKILL.md is too large for the entrypoint: ${lines} lines`);
 
 const whips = read("WHIPS.md");
-const template = read("templates/WHIPS.md");
-const states = ["WAITING", "READY", "IN-FLIGHT", "VERIFYING", "VERIFIED", "REWHIP", "DISCARDED", "ABANDONED"];
-for (const state of states) {
-  if (!whips.includes(state)) fail(`WHIPS.md is missing state ${state}`);
-}
-
-const fields = ["HANDLER:", "VERIFIER:", "NEEDS:", "OWNS:", "INPUTS:", "CONTEXT LIMIT:", "RETURN LIMIT:", "REPLACE WHEN:", "OUTPUT:", "NORM:", "BUDGET:", "WATCH:", "INSPECTION:", "PROOF:", "VERIFY INPUTS:", "DISPATCH:", "REPORT:", "ACCOUNT:", "VERIFY DISPATCH:", "VERIFY REPORT:", "STATE:", "EVIDENCE:"];
-for (const field of fields) {
-  if (!template.includes(field)) fail(`WHIPS template is missing ${field}`);
-}
-
-for (const field of ["MISSION:", "NON-NEGOTIABLES:", "SYSTEM MAP:", "DECISIONS:", "CONTEXT POLICY:"]) {
-  if (!template.includes(field)) fail(`WHIPS template is missing header ${field}`);
+for (const text of [
+  ".apm/project.json",
+  "measured",
+  "reported",
+  "planned",
+  "unknown",
+  "Preparing a handoff does not transfer authority",
+  "manager may coordinate and inspect but does not own production workstreams",
+]) {
+  if (!whips.includes(text)) fail(`WHIPS.md is missing: ${text}`);
 }
 
 const markdownFiles = [
@@ -114,23 +104,24 @@ const markdownFiles = [
   "references/research.md",
   "references/history.md",
   "references/operational-controls.md",
+  "references/software-project-profile.md",
+  "references/experiments.md",
   "references/origin.md",
   "references/launch.md",
   "THIRD_PARTY_NOTICES.md",
-  "evals/README.md"
+  "evals/README.md",
 ];
 
 for (const markdownFile of markdownFiles) {
   const content = read(markdownFile);
-  const linkPattern = /\[[^\]]+\]\(([^)]+\.md)\)/g;
+  const linkPattern = /\[[^\]]+\]\(([^)]+\.(?:md|json))\)/g;
   for (const match of content.matchAll(linkPattern)) {
+    if (/^https?:/i.test(match[1])) continue;
     const target = path.resolve(root, path.dirname(markdownFile), match[1]);
     if (!fs.existsSync(target)) fail(`${markdownFile} links to missing ${match[1]}`);
   }
 }
 
-for (const script of ["scripts/manager-hook.mjs", "scripts/whips-check.mjs", "scripts/runtime-report.mjs", "scripts/install-hooks.mjs", "scripts/lib/whips.mjs"]) {
-  read(script);
-}
+for (const script of ["scripts/apmctl.mjs", "scripts/lib/project-state.mjs"]) read(script);
 
 console.log("skill validation passed");

@@ -1,175 +1,299 @@
-# WHIPS Manager Ledger
+# WHIPS Project Memory
 
-`WHIPS.md` is the non-executing manager's durable control plane. It preserves the mission and whole-system map while disposable worker contexts absorb source code, logs, research, implementation, testing, verification, and integration.
-
-Create it before the first leaf action. Use `<project>/WHIPS.md`, a sibling `shared/WHIPS.md` in team harnesses, or set `APM_WHIPS_PATH`. Update it after every dispatch and bounded return. The manager may decide, assign, watch, correct, and accept; it may not become a worker.
+WHIPS is the durable memory of a persistent multi-session project. It is not a natural-language work-order parser and it is not a reason to create a hierarchy for every task.
 
 ```text
-W - Work Unit
-H - Handler and independent verifier
-I - Inspection contract
-P - Proof required for manager acceptance
-S - Manager-owned state
+W - Workstreams and their durable ownership
+H - Hierarchy, human authority, and handoffs
+I - Invariants, interfaces, and integration
+P - Project memory, proof, and provenance
+S - Sessions, state, and succession
 ```
 
-## Required Header
+The canonical machine-readable state is `.apm/project.json`. The manager and workers may communicate in ordinary prose. The state file records the meanings that must survive those conversations.
 
-```markdown
-# WHIPS: <scope>
-
-MISSION: <one sentence preserving the user's desired outcome>
-NON-NEGOTIABLES: <constraints that may not drift>
-SYSTEM MAP: <whole-system structure, work units, and dependencies>
-DECISIONS: <accepted architecture and policy decisions>
-MANAGER: <responsible non-executing orchestrator>
-CONTEXT POLICY: <what remains with the manager and what remains in worker contexts>
-STOP: ROOT is VERIFIED or explicitly ABANDONED with a reason and handoff
-ENFORCEMENT: manager performs no leaf work; every producer has a different verifier
-```
-
-The manager re-reads this constitution before every dispatch, state transition, correction, and final decision. Raw source, long logs, exploratory transcripts, patches, and test output are not manager context.
-
-## Required Work Unit Fields
-
-```markdown
-- [ ] W1: <observable work unit>
-  HANDLER: <producer agent>
-  VERIFIER: <different verifier agent>
-  NEEDS: <verified unit ids or none>
-  OWNS: <repository-relative paths or read-only>
-  INPUTS: <minimum sufficient context and accepted decisions>
-  CONTEXT LIMIT: <maximum input tokens and worker tool calls>
-  RETURN LIMIT: <integer chars>
-  REPLACE WHEN: <context, loop, staleness, or scope threshold>
-  OUTPUT: <artifact or response contract>
-  NORM: <quantity, quality, proof, and completion boundary>
-  BUDGET: <time, tokens, calls, tools, or other limit>
-  WATCH: <wait, poll, recontact, or interrupt cadence>
-  INSPECTION: <what the fresh verifier will inspect>
-  PROOF: <commands, source evidence, or observable acceptance evidence>
-  VERIFY INPUTS: <bounded artifact paths and decisions for the verifier>
-  DISPATCH: <producer call/session id and time, or pending>
-  REPORT: <APM WORK REPORT reference, or pending>
-  ACCOUNT: <actual output, usage, unfinished work, and deviations, or pending>
-  VERIFY DISPATCH: <verifier call/session id and time, or pending>
-  VERIFY REPORT: <APM VERIFY REPORT reference, or pending>
-  STATE: WAITING | READY | IN-FLIGHT | VERIFYING | VERIFIED | REWHIP | DISCARDED | ABANDONED
-  EVIDENCE: <PASS evidence, failure reason, or pending>
-```
-
-`RETURN LIMIT` uses the machine-readable form `<integer> chars`, for example `4000 chars`. Every producer and verifier report includes a `CONTEXT ACCOUNT`. `HANDLER` and `VERIFIER` must identify different agents.
-
-Use the same full field set for `ROOT`. Its handler is a dedicated integration worker, not the manager, and its verifier must be different from that integrator.
-
-## Context Control
-
-- Give each worker only the smallest context slice needed for its unit.
-- Keep durable artifacts on disk and pass paths or compact decisions instead of predecessor transcripts.
-- Stop and replace a worker when `REPLACE WHEN` fires.
-- Do not ask a replacement to continue from an unbounded chat transcript.
-- Reject reports over `RETURN LIMIT`; they would pollute the manager context.
-- Record supplied context, tool calls, compaction, and limit status in `CONTEXT ACCOUNT`.
-
-The runtime can enforce order fields and returned character count. Token and compaction accounting depends on the agent runtime, so the worker must report it and the manager must treat uncertainty as a reason to replace or narrow the contract.
-
-## State Authority
-
-- `WAITING`: one or more ids in `NEEDS` are not `VERIFIED`.
-- `READY`: dependencies are verified and the producer contract is complete.
-- `IN-FLIGHT`: the producer contract has been dispatched.
-- `VERIFYING`: the producer returned; a different verifier must now run.
-- `VERIFIED`: the verifier returned `PASS`, `GAPS: none`, and the manager accepted the evidence.
-- `REWHIP`: the producer or verifier failed a recoverable contract.
-- `DISCARDED`: the result will not be integrated; record why.
-- `ABANDONED`: completion is impossible or no longer warranted; record reason and handoff.
-
-A producer cannot self-certify. A verifier produces evidence but cannot change ledger state. Only the manager accepts or rejects evidence. `VERIFIED` evidence must begin with `PASS`.
-
-## Runtime Manager Gate
-
-Run the bundled checker from the target project root:
+## Directory Layout
 
 ```text
-node <installed-skill-dir>/scripts/whips-check.mjs --status
+.apm/
+  project.json
+  checkpoints/
+    <session-id>.md
+  handoffs/
+    <handoff-id>.md
+  local/
 ```
 
-It derives duties from the ledger:
+- `project.json` is shared durable state and should normally be committed.
+- `checkpoints/` contains bounded continuity packets written before compaction or replacement.
+- `handoffs/` contains immutable succession packets.
+- `local/` may contain uncommitted runtime data and must not contain the only copy of a project decision.
 
-- `M-UNLOCK`: dependencies cleared; finish the next bounded contract.
-- `M-DISPATCH`: send the recorded producer order.
-- `M-WATCH`: collect a producer or verifier report at the recorded cadence.
-- `M-VERIFY`: dispatch the independent verifier.
-- `M-DECIDE`: accept `PASS` or correct, reassign, discard, or abandon.
-- `M-CORRECT`: execute a recorded `REWHIP` or ownership change.
+Do not store secrets, raw transcripts, long logs, or full source snapshots in project state.
 
-Claude Code hooks call the same logic before Agent dispatch, before manager leaf tools, when a subagent stops, and when the manager attempts to stop. With persistent enforcement installed, direct repository inspection, editing, shell work, and web research are denied to the main manager. Once an execution tool is attempted, `Stop` requires an active ledger instead of permitting a failure narrative.
+## Project State
 
-For dispatch, the manager should send only one of these prompts:
+The schema version is `2`. See [templates/APM_PROJECT.json](templates/APM_PROJECT.json) for a complete example.
+
+### Project
+
+```json
+{
+  "project": {
+    "name": "FiveGround",
+    "mission": "The outcome that must survive every session",
+    "phase": "current project phase",
+    "status": "draft | active | paused | complete",
+    "human_authority": "user",
+    "manager_session": "manager-1"
+  }
+}
+```
+
+An active project has exactly one active manager. The human authority remains the source of final approval unless an exact directive explicitly delegates a bounded decision.
+
+### Directives
+
+Record consequential user instructions without paraphrasing away their scope.
+
+```json
+{
+  "id": "U1",
+  "quote": "Exact user sentence",
+  "scope": "what this authorizes",
+  "authority": "user",
+  "source": "message id, transcript location, or direct manager observation",
+  "recorded_at": "ISO-8601 timestamp",
+  "status": "active"
+}
+```
+
+Valid statuses are `active`, `superseded`, and `expired`. Approval for planning, commit, deployment, destructive actions, and architecture changes is not interchangeable.
+
+### Invariants And Architecture
+
+Invariants are concise rules that must survive handoff. Architecture entries define stable boundaries and interfaces.
+
+```json
+{
+  "invariants": [
+    {"id": "I1", "text": "Rule that may not drift", "authority": "user", "status": "active"}
+  ],
+  "architecture": [
+    {
+      "id": "A1",
+      "area": "combat",
+      "rule": "accepted boundary or interface",
+      "owner_session": "worker-combat",
+      "interfaces": ["src/combat/api.ts"]
+    }
+  ]
+}
+```
+
+Architecture changes require the authority named by the applicable directive or invariant. Record a new decision; do not silently rewrite the old rule.
+
+### Sessions
+
+Each persistent session has an identity and generation. Never reuse an id for a replacement.
+
+```json
+{
+  "id": "worker-combat-1",
+  "role": "worker",
+  "generation": 1,
+  "scope": "combat systems",
+  "status": "active",
+  "context": {
+    "health": "green",
+    "last_checkpoint": ".apm/checkpoints/worker-combat-1.md",
+    "checkpoint_sha256": "sha256 of the checkpoint file",
+    "last_refresh": "ISO-8601 timestamp",
+    "compactions": 1,
+    "signals": [],
+    "next_action": "implement W3"
+  }
+}
+```
+
+Roles are `manager`, `worker`, `recorder`, `verifier`, or `integrator`. Session statuses are `starting`, `active`, `compact-due`, `handoff-due`, `replacing`, `retired`, and `lost`. Context health is `green`, `amber`, `red`, or `unknown`.
+
+`amber` and `red` are operational warnings, not shame labels. They trigger checkpoint, refresh, handoff, or replacement actions.
+
+### Workstreams
+
+A workstream is large enough to benefit from continuity. Do not create one per tool call.
+
+```json
+{
+  "id": "W3",
+  "title": "combat resolution",
+  "owner_session": "worker-combat-1",
+  "state": "active",
+  "depends_on": ["W1"],
+  "scope": ["src/combat/**"],
+  "acceptance": ["deterministic replay test passes"],
+  "outputs": ["commit:abc123"],
+  "evidence": ["test:combat-replay exit=0"],
+  "decision_needed": null,
+  "updated_at": "ISO-8601 timestamp"
+}
+```
+
+States are:
 
 ```text
-APM DISPATCH: W1
-APM VERIFY: W1
+backlog -> ready -> active -> review -> accepted
+                     |          |
+                     -> blocked -> active
+Any nonterminal state -> superseded | abandoned
 ```
 
-The hook expands the shorthand into the complete producer or verifier envelope using this ledger. It also replaces incomplete, duplicated, or drifted fields with canonical ledger values. `TaskCreate` receives the same normalization. Unknown units and invalid states stay blocked, with an exact valid envelope included in the rejection. Task-list and team tools remain secondary control surfaces backed by an active valid ledger. Dispatched workers retain their leaf tools but cannot create an unrecorded child hierarchy.
+Rules:
 
-Hook decisions append to `.apm/runtime.jsonl` without prompt or report content. Summarize them with:
+- every active or review workstream has one active non-manager owner;
+- dependencies must exist and must not form a cycle;
+- accepted work records both outputs and evidence;
+- coupled write scopes have one owner or an explicit serialized transfer;
+- a retired or lost session cannot retain active ownership;
+- the manager may coordinate and inspect but does not own production workstreams.
 
-```text
-node <installed-skill-dir>/scripts/runtime-report.mjs --json
+### Decisions
+
+```json
+{
+  "id": "D7",
+  "text": "Accepted decision",
+  "authority": "user | manager",
+  "status": "active",
+  "affects": ["W3", "A1"],
+  "evidence": "exact directive or measured basis",
+  "supersedes": null,
+  "recorded_at": "ISO-8601 timestamp"
+}
 ```
 
-## Producer Return
+Preserve superseded decisions. A future session needs to know not only what is current but which tempting old path was deliberately rejected.
 
-```markdown
-APM WORK REPORT
-UNIT: <unit id>
-STATUS: COMPLETE | BLOCKED | PARTIAL
-OUTPUTS: <exact paths, patch, commit, findings, or none>
-UNFINISHED: <required work not completed, or none>
-PROOF: <command and exit code, source evidence, or observable check>
-CHANGES: <files, interfaces, and decisions changed>
-ACCOUNT: <norm achieved, budget used, and deviations>
-CONTEXT ACCOUNT: <context supplied, tool calls used, compaction or limit status>
-ASSUMPTIONS: <remaining assumptions or none>
-RISKS: <residual risks or none>
-MANAGER DECISION: <specific decision needed or none>
+### Observations
+
+Every important claim should be typed by epistemic status:
+
+```json
+{
+  "id": "O9",
+  "kind": "measured | reported | planned | unknown",
+  "claim": "what is believed",
+  "source": "command, commit, artifact, session, or user",
+  "at": "ISO-8601 timestamp"
+}
 ```
 
-A conforming producer return moves the unit only to `VERIFYING`.
+Never silently promote `reported` or `planned` to `measured`.
 
-## Independent Verifier Return
+### Handoffs
 
-```markdown
-APM VERIFY REPORT
-UNIT: <unit id>
-VERDICT: PASS | FAIL | BLOCKED
-CHECKS: <checks actually performed>
-PROOF: <decisive evidence>
-GAPS: <missing or failed requirements, or none>
-CONTEXT ACCOUNT: <context supplied, tool calls used, compaction or limit status>
-RISKS: <residual risks or none>
-MANAGER DECISION: <specific correction or acceptance decision needed>
+Handoffs are two-phase records.
+
+```json
+{
+  "id": "H1",
+  "from": "manager-1",
+  "to": "manager-2",
+  "role": "manager",
+  "status": "prepared | accepted | cancelled",
+  "packet": ".apm/handoffs/H1.md",
+  "packet_sha256": "sha256 of the immutable packet",
+  "prepared_at": "ISO-8601 timestamp",
+  "accepted_at": null,
+  "acknowledgement": null
+}
 ```
 
-`PASS` requires `GAPS: none`. `FAIL` or `BLOCKED` keeps dependencies closed and must request a concrete manager decision.
+Preparing a handoff does not transfer authority. Acceptance does.
 
-## Corrective Dispatch
+### Project Reviews
 
-Append corrections without erasing failed attempts:
+Record periodic cumulative snapshots so project benefit can be evaluated over time rather than inferred from agent activity.
 
-```markdown
-  REWHIP 1:
-    REASON: <contract, context, evidence, or integration failure>
-    RETURN: <specific missing or corrected output>
-    PROOF: <evidence required on the next return>
-    HANDLER: <same or replacement agent>
+```json
+{
+  "id": "R1",
+  "period": "milestone-1",
+  "accepted_workstreams": 6,
+  "architecture_violations": 0,
+  "regressions": 1,
+  "rework_events": 2,
+  "compactions": 3,
+  "handoffs": 1,
+  "integration_losses": 0,
+  "elapsed_hours": 18.5,
+  "tokens": null,
+  "cost_usd": null,
+  "evidence": ["commit range", "test report", "decision audit"]
+}
 ```
 
-Repeat the complete mission slice, context limit, ownership, missing return, proof, replacement condition, and report schema. Never rely on the worker remembering its prior context.
+Use `null` when a metric is unavailable. Do not replace an unavailable measurement with an estimate unless the estimate is explicitly labeled in evidence.
 
-## Root Integration
+## Validation Severity
 
-Unlock `ROOT` only after every required unit is `VERIFIED`. Dispatch exact verified artifacts to the root integrator. The manager does not rewrite or merge them. A different root verifier checks interfaces, assumptions, end-to-end behavior, and regressions. The run closes only after the manager accepts that bounded `PASS` report.
+The runtime distinguishes structural errors from operating warnings.
 
-Copy [templates/WHIPS.md](templates/WHIPS.md) to start a run.
+**Errors** include invalid JSON, duplicate ids, missing references, dependency cycles, multiple active managers, manager-owned production work, or accepted work without outputs and evidence.
+
+**Warnings** include amber or red context, stale or missing checkpoints, unresolved decisions, an unaccepted handoff, or ownership that should be reviewed.
+
+Warnings produce the next management actions but do not lock the agent out of ordinary tools. This is deliberate: the failed v3/v4 runtime demonstrated that a strict natural-language gate can consume the project instead of protecting it.
+
+## Context Checkpoint
+
+Use [templates/SESSION_CHECKPOINT.md](templates/SESSION_CHECKPOINT.md). A useful checkpoint contains:
+
+- session identity, generation, role, and scope;
+- current objective and applicable invariants;
+- changed artifacts and current measured evidence;
+- accepted local decisions and rejected paths;
+- unresolved questions and blockers;
+- next action and expected proof;
+- context-health signals and reason for compact or handoff.
+
+The checkpoint is a working-set continuation, not a transcript summary.
+
+## Handoff Packet
+
+Use [templates/HANDOFF.md](templates/HANDOFF.md). A manager packet includes:
+
+- mission, phase, human authority, and exact active directives;
+- invariants and architecture map;
+- active roster with context health;
+- active, review, and blocked workstreams;
+- unresolved decisions and integration risks;
+- current measured outputs and evidence locations;
+- the next three management actions.
+
+The successor acknowledgement restates the mission, non-negotiables, current phase, largest risk, and next three actions. Transfer authority only after discrepancies are corrected.
+
+## WHIPS Brief
+
+`apmctl brief` renders a bounded view of project state for one session. It is intentionally selective:
+
+- managers receive global state and bounded workstream summaries;
+- workers receive their scope, relevant invariants and decisions, owned workstreams, dependencies, and next action;
+- retired sessions receive no new assignment context.
+
+This brief is the normal refresh input after compaction or at the start of a successor session. Do not replay the full project transcript.
+
+## Runtime Commands
+
+```bash
+node <skill-dir>/scripts/apmctl.mjs init --name "Project"
+node <skill-dir>/scripts/apmctl.mjs validate
+node <skill-dir>/scripts/apmctl.mjs status --json
+node <skill-dir>/scripts/apmctl.mjs brief --session worker-combat-1
+node <skill-dir>/scripts/apmctl.mjs checkpoint --session worker-combat-1 --file .apm/checkpoints/worker-combat-1.md --health green --compacted
+node <skill-dir>/scripts/apmctl.mjs handoff --from manager-1 --to manager-2
+node <skill-dir>/scripts/apmctl.mjs accept-handoff --id H1 --ack-file .apm/handoffs/H1-ack.md
+```
+
+The scripts validate and summarize shared state. Artifact inspection, user approval, and managerial judgment remain outside the parser.

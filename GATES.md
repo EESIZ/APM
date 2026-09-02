@@ -1,26 +1,35 @@
-# Gates: APM manager-discipline release
+# Gates: APM 2.0 persistent-session redesign
 
-OWNS: README.md, LICENSE, SKILL.md, WHIPS.md, references/**, templates/**, scripts/**, evals/**, GATES.md
+OWNS: README.md, SKILL.md, WHIPS.md, templates/**, references/**, scripts/**, tests/**, evals/**, package.json, .gitignore, THIRD_PARTY_NOTICES.md, GATES.md
 
-Scope: Reposition, package, evaluate, and publish APM as the manager-side discipline for orchestrator-plus-isolated-subagent systems.
+Scope: Replace forced one-shot orchestration with persistent multi-session project memory, context lifecycle, and succession while preserving the historical abstractions and the author's Korean statement.
 
-- [x] G1: The repository has an MIT license, install-first English README, verified research positioning, and discoverability metadata.
-  CHECK: node scripts/validate-repo.mjs
-  EXPECT: repository validation passed
-  EVIDENCE: exit=0; shell=C:\WINDOWS\system32\cmd.exe; cwd=E:\APM; path=28c828a71423/52 entries; output=repository validation passed
-
-- [x] G2: The skill frontmatter, WHIPS protocol, template routing, and unlazy interoperability contract are structurally valid.
+- [x] G1: APM routes only for continuing multi-session projects, A2A session coordination, compaction, handoff, or explicit project audit.
   CHECK: node scripts/validate-skill.mjs
   EXPECT: skill validation passed
-  EVIDENCE: exit=0; shell=C:\WINDOWS\system32\cmd.exe; cwd=E:\APM; path=28c828a71423/52 entries; output=skill validation passed
+  EVIDENCE: frontmatter excludes hooks and ordinary one-shot activation; validator passed on 2026-09-02.
 
-- [x] G3: The same evaluation prompts have been run in no-skill and APM conditions and scored with a reproducible rubric.
-  CHECK: node scripts/run-evals.mjs --verify
-  EXPECT: evaluation verification passed
-  EVIDENCE: exit=0; shell=C:\WINDOWS\system32\cmd.exe; cwd=E:\APM; path=28c828a71423/52 entries; output=evaluation verification passed
+- [x] G2: Durable state distinguishes human directives, invariants, persistent sessions, workstreams, decisions, observations, context health, and two-phase handoffs.
+  CHECK: node tests/project-state-tests.mjs
+  EXPECT: all project-state tests passed
+  EVIDENCE: 12/12 tests passed on the final implementation cycle.
 
-- [x] G4: Every consequential research or ecosystem claim in the README points to a primary source and avoids unsupported inevitability claims.
-  EVIDENCE: Reviewed 2026-09-01 against arXiv 2604.02460, Stanford/SAP CooperBench arXiv 2601.13295, and official Anthropic, OpenAI, Cognition, and Microsoft publications. The README separates source findings from APM inference and corrects the Stanford/equal-token conflation.
+- [x] G3: Runtime enforcement validates structured lifecycle state without parsing natural-language worker messages or blocking normal project tools.
+  CHECK: node scripts/validate-repo.mjs
+  EXPECT: repository validation passed
+  EVIDENCE: v3/v4 hook, installer, runtime log, Markdown parser, and old runtime tests removed; `apmctl` installed.
 
-- [x] G5: GitHub topics are configured and the verified commit is present on origin/main.
-  EVIDENCE: GitHub reported MIT License and topics a2a, agent-orchestration, agent-skill, claude-skill, multi-agent, subagents, and manager-agent. origin/main resolved to 404410e99901433f52164be4553e869ae74ad0fb. `npx --yes skills add EESIZ/APM --list` discovered exactly one skill named a2a-manager-agent-orchestration.
+- [x] G4: Evaluation distinguishes behavioral checks, routing, archived prompt evidence, and a longitudinal project protocol with a short overhead control.
+  CHECK: node scripts/validate-evals.mjs
+  EXPECT: evaluation fixtures valid
+  EVIDENCE: three topology conditions, four project episodes, crossover metrics, and pilot/confirmatory sample plans validated.
+
+- [x] G5: The author's Korean `진짜 출발점` section remains byte-equivalent after newline normalization.
+  CHECK: node scripts/validate-repo.mjs
+  EXPECT: repository validation passed
+  EVIDENCE: SHA-256 remains 0656a4422c1edd2c1c62dd930c986cb68ec571db5aaf42f954fa72d006086448.
+
+- [x] G6: The final repository diff is clean, all tests pass after residue cleanup, and the redesign is ready for commit.
+  CHECK: npm test
+  EXPECT: repository validation passed; skill validation passed; evaluation fixtures valid; all project-state tests passed
+  EVIDENCE: `npm test` passed all repository, skill, evaluation, and 12/12 project-state checks on 2026-09-02.

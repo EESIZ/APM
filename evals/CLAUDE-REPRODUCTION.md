@@ -1,5 +1,7 @@
 # Claude Sonnet Informal Reproduction
 
+> Legacy v1 prompt evidence. This run predates persistent sessions, context checkpoints, manager succession, and the v3/v4 falsification. It is retained only as evidence that injected management instructions changed rubric-aligned answers.
+
 Run date: 2026-09-01
 
 Runtime: `claude-code-session-subagents`  
@@ -32,7 +34,7 @@ The largest gains appeared where the manager had to resolve conflicting reports,
 
 ## Method And Limitations
 
-This was an informal in-session reproduction of the repository protocol, not output from `scripts/run-evals.mjs`. Nested Claude CLI calls were unavailable in the evaluation environment, so Claude Sonnet subagents inside a Claude Code session produced and judged the responses. Tools were instructed off, and the blinded labels alternated by case.
+This was an informal in-session reproduction of the legacy prompt harness, not an official harness run. The v1 runner was removed in APM 2.0 after the evaluation unit changed to longitudinal project episodes. Nested Claude CLI calls were unavailable in the evaluation environment, so Claude Sonnet subagents inside a Claude Code session produced and judged the responses. Tools were instructed off, and the blinded labels alternated by case.
 
 Known deviations from the official harness:
 

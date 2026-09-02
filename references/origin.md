@@ -22,4 +22,4 @@ They have no "human rights." You may feel attachment to them, but it should be a
 
 ## Project Translation
 
-APM turns that polemical starting point into an operational claim: delegate execution without surrendering judgment. The manager agent owns the goal, system map, context budgets, contracts, evidence standard, correction, and final acceptance while workers perform verification and integration.
+APM turns that polemical starting point into an operational claim: delegate execution without surrendering judgment or project memory. The human retains authority; a manager session preserves the mission, architecture, roster, and decisions; persistent workers retain useful domain context; checkpoints and handoffs allow the organization to survive compact, failure, and session replacement.

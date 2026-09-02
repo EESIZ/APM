@@ -1,122 +1,131 @@
-# Launch and Measurement Playbook
+# Launch And Measurement Playbook
 
-APM does not need to wait for cheaper tokens. The target users already run manager agents through Claude Code tasks, Codex subagents, research orchestrators, and coding-agent teams. Launch around the management gap, not a prediction that "A2A will return."
+APM 2.0 should be launched as a candid redesign, not as a claim that more agents are faster.
 
 ## Positioning
 
 Primary line:
 
-> If unlazy disciplines the worker, APM disciplines the manager.
+> APM keeps an AI project coherent longer than any one agent session.
 
-Supporting claim:
+Supporting line:
 
-> The multi-agent pattern that survived the backlash is a manager with bounded, isolated subagents. That manager still needs contracts, context budgets, independent evidence, correction, and integration supervision.
+> Models already know how to summon agents. APM manages persistent ownership, project memory, context health, compact, and succession across the sessions that remain.
 
-Do not lead with lower token prices or claim that multi-agent systems are inherently better. Lead with the failure modes documented by equal-budget reasoning research, Stanford CooperBench, Anthropic, and Cognition.
+The useful contrast with unlazy is now temporal:
+
+> unlazy helps one worker finish a substantial task. APM helps the organization survive the next hundred tasks and several session generations.
+
+## Honest Failure Story
+
+Lead with the correction because it distinguishes APM from prompt folklore:
+
+- injected APM rules improved short management answers;
+- normal installation did not reliably activate;
+- hard activation created a deadlock;
+- automatic contract generation removed the deadlock but made a three-minute task 35 times more expensive and still lost one feature;
+- the redesign moved from forced ephemeral delegation to persistent session organization.
+
+The negative result is part of the product rationale, not an appendix to hide.
+
+## Design-Target Story
+
+The ecological case is the FiveGround workflow: one continuing director, four continuing domain workers, A2A session communication, worker checkpoints before compact, and periodic director succession.
+
+Do not present this case as a controlled universal effect. Present it as the working system that revealed why the one-shot benchmark and the one-shot skill were aimed at the wrong object.
 
 ## Release Order
 
-1. Ship MIT licensing, install-first README, topics, source ledger, WHIPS, and controlled evaluation.
-2. Propose the APM/unlazy pairing to the unlazy maintainer.
-3. Submit APM to maintained agent-skill and Claude-skill lists whose contribution rules it satisfies.
-4. Publish the historical essay with the repository launch on Show HN and r/ClaudeAI.
-5. Capture GitHub traffic at least every 14 days and annotate each distribution event.
-
-## unlazy Proposal Draft
-
-Title:
-
-```text
-Interoperability idea: APM manager ledger above unlazy leaf gates
-```
-
-Body:
-
-```markdown
-I built APM, a manager-side Agent Skill for orchestrator-worker runs:
-https://github.com/EESIZ/APM
-
-The scopes appear complementary:
-
-- APM keeps a manager-owned WHIPS.md for work contracts, handlers, dependencies,
-  inspection, proof, correction, and integration.
-- unlazy keeps each substantial worker leaf honest with runnable GATES.md checks
-  and re-verifiable evidence.
-
-The proposed composition is: use APM as the manager, unlazy inside each leaf.
-APM's interoperability contract is here:
-https://github.com/EESIZ/APM/blob/main/references/interoperability.md
-
-Would a short reciprocal integration example or reference be useful in unlazy?
-I am happy to adapt the terminology to avoid coupling either project.
-```
-
-Open a discussion when the repository enables discussions; otherwise use an issue. Do not imply endorsement before the maintainer responds.
+1. Ship the new routing boundary, WHIPS project state, checkpoint and handoff templates, `apmctl`, falsification record, and longitudinal protocol.
+2. Run a dry project episode that exercises init, worker checkpoint, manager handoff, and state validation.
+3. Instrument FiveGround or another continuing project retrospectively where logs allow it.
+4. Pilot the longitudinal comparison with at least three task-sequence seeds per condition.
+5. Publish the redesign and ask persistent multi-session users for reproducible case reports.
+6. Submit to skill directories only after installation from the public repository reproduces the packaged file set.
 
 ## Show HN Draft
 
 Title:
 
 ```text
-Show HN: APM - manager discipline for orchestrator-worker agent systems
+Show HN: APM - project memory and succession for persistent AI sessions
 ```
 
 Opening:
 
 ```text
-Peer agent swarms often lose to one coherent agent. The pattern that is actually
-shipping is narrower: one manager, bounded subagents, isolated contexts, and one
-integration point. APM is an Agent Skill for the missing manager-side controls:
-contracts, ownership, proof, corrective redispatch, and verified integration.
+I first built APM as a hard manager skill that forced every coding task through
+subagents. It activated, deadlocked, then became 35x more expensive than a single
+session while losing a feature. The experiment falsified the design.
 
-It pairs with unlazy: APM disciplines the manager; unlazy proves each worker leaf.
-The repo includes a six-case no-skill/APM evaluation and an evidence ledger that
-uses the strongest anti-multi-agent research as the reason for the protocol.
+APM 2.0 keeps the useful part: one manager preserves mission and architecture,
+persistent domain workers retain local context, workers checkpoint before compact,
+and managers hand control to a successor before their own context degrades.
+
+The repo includes the failed lineage, structured project state, a zero-dependency
+state and handoff tool, and a longitudinal evaluation protocol. It does not claim
+that more agents always win.
 ```
 
-Link the historical essay after the operational explanation. Its title is "Principal-Agent Management Under Zero Trust: From Cato to Subagents." Keep the provocative historical vocabulary in the source analysis rather than the launch headline.
-
-## r/ClaudeAI Draft
+## Marketplace Copy
 
 ```text
-I made a Claude/Codex-compatible skill for agents that manage subagents. It does
-not assume more agents are better. It first asks whether delegation earns its
-coordination cost, then writes a manager-owned WHIPS ledger for scope, handler,
-inspection, proof, and state. A worker cannot mark itself VERIFIED.
-
-The latest six-case blinded evaluation scored 72.2% without the skill and 90.3%
-with APM on the same Codex model. Raw outputs are committed, and the README is
-explicit that this is one prompt-level run rather than a universal benchmark.
+Run long projects through persistent AI sessions without making one context carry
+everything. APM gives a manager durable project memory, stable worker ownership,
+context-health checkpoints, compaction recovery, measured state, and two-phase
+session handoffs. Built for multi-session A2A workflows, not one-shot subagent calls.
 ```
 
-## Awesome-List Pitch
+Suggested tags:
 
 ```text
-- [APM](https://github.com/EESIZ/APM) - Manager-side discipline for
-  orchestrator-worker agent systems, with delegation contracts, WHIPS state
-  ledgers, evidence-based verification, unlazy interoperability, and a
-  reproducible no-skill/APM evaluation.
+multi-session, agent-management, a2a, context-management, project-memory,
+session-handoff, claude-code, software-development
 ```
 
-Follow each target list's alphabetical order, description length, license, and test requirements rather than sending one bulk PR.
+Suggested use cases:
+
+- Coordinate persistent manager and domain-worker sessions across a long project.
+- Preserve architecture, exact user directives, and ownership through context pressure.
+- Checkpoint workers before compact and verify continuity afterward.
+- Replace manager sessions through bounded, acknowledged handoffs.
+- Audit reported project state against current measured artifacts.
+
+## unlazy Proposal Draft
+
+Title:
+
+```text
+Interoperability idea: persistent APM project state above local unlazy gates
+```
+
+Body:
+
+```markdown
+I rebuilt APM around a different time scale:
+https://github.com/EESIZ/APM
+
+- APM maintains persistent project memory, stable session ownership, context
+  checkpoints, and manager/worker succession.
+- unlazy maintains runnable completion gates inside one substantial worker task.
+
+The worker checkpoint can retain its current GATES state and decisive evidence,
+while APM handles the project context that must survive after that task and session.
+The interoperability notes are here:
+https://github.com/EESIZ/APM/blob/main/references/interoperability.md
+```
+
+Do not imply endorsement before the maintainer responds.
 
 ## Measurement
 
-GitHub's [repository traffic documentation](https://docs.github.com/en/repositories/viewing-activity-and-data-for-your-repository/viewing-traffic-to-a-repository) exposes views, unique visitors, full clones, referrers, and popular content for the previous 14 days. Record a snapshot before each launch action and again 2, 7, and 14 days later.
+Distribution metrics remain useful but do not validate the protocol.
 
-Track:
+Track GitHub views, unique visitors, clones, stars, and marketplace installs after each launch action. Separately collect project evidence:
 
-| Date | Action | Views | Unique visitors | Clones | Unique cloners | Stars | Top referrer | Notes |
-| --- | --- | ---: | ---: | ---: | ---: | ---: | --- | --- |
+| Project interval | Sessions | Accepted work | Architecture violations | Rework | Compacts | Handoffs | Recovery | Cost/time |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 
-Useful authenticated commands:
+The core product signal is repeated use across project milestones and session generations, not raw skill invocation count.
 
-```bash
-gh api repos/EESIZ/APM/traffic/views
-gh api repos/EESIZ/APM/traffic/clones
-gh api repos/EESIZ/APM/traffic/popular/referrers
-```
-
-GitHub clones are an imperfect installation proxy: a clone may not be an install, and package-manager caching may hide repeated installs. Treat channel-attributed traffic and clones as directional signals, not exact active-user counts. Prefer a registry's own install analytics if a public author dashboard becomes available.
-
-The repository topics are `claude-skill`, `agent-skill`, `agent-orchestration`, `multi-agent`, `a2a`, `manager-agent`, and `subagents`. GitHub documents topics as a repository discovery mechanism in [Classifying your repository with topics](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/classifying-your-repository-with-topics).
+GitHub traffic covers a rolling window and clones are only a directional installation proxy. Record snapshots before launch and 2, 7, and 14 days afterward so channel effects are not guessed from star count alone.

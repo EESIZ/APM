@@ -1,421 +1,286 @@
 ---
 name: a2a-manager-agent-orchestration
 description: >-
-  Use this skill at the start of every tool-using execution task whenever Agent,
-  Task, teammate, subagent, or equivalent worker tools are available to the
-  current agent. Treat access to this manager-only skill as assignment to the
-  manager role unless a bounded worker contract explicitly marks this agent as
-  a leaf. Trigger before planning, TaskCreate, repository
-  inspection, research, edits, tests, or artifact production even when the
-  request never mentions delegation, APM, agents, parallelism, or long-running
-  work, and even when the task appears small or coherent. Once active, the
-  manager must not perform leaf work or choose single-agent execution: preserve
-  the mission and system map in WHIPS.md, delegate execution, verification, and
-  integration through bounded worker contexts, supervise returns, and retain
-  acceptance authority. Do not trigger for answer-only conversation or when no
-  worker-agent mechanism exists.
-hooks:
-  PreToolUse:
-    - matcher: "^(Agent|Task)$"
-      hooks:
-        - type: command
-          command: 'node "${CLAUDE_SKILL_DIR}/scripts/manager-hook.mjs" pre-agent'
-          timeout: 10
-    - matcher: "^(Bash|Shell|Read|Write|Edit|MultiEdit|NotebookEdit|Glob|Grep|WebFetch|WebSearch|TaskCreate|TaskGet|TaskUpdate|TaskList|TodoWrite|TeamCreate|TeamDelete)$"
-      hooks:
-        - type: command
-          command: 'node "${CLAUDE_SKILL_DIR}/scripts/manager-hook.mjs" pre-manager-tool'
-          timeout: 10
-  SubagentStop:
-    - hooks:
-        - type: command
-          command: 'node "${CLAUDE_SKILL_DIR}/scripts/manager-hook.mjs" subagent-stop'
-          timeout: 10
-  Stop:
-    - hooks:
-        - type: command
-          command: 'node "${CLAUDE_SKILL_DIR}/scripts/manager-hook.mjs" stop'
-          timeout: 20
+  Use this skill to operate a long-running project through multiple persistent
+  agent sessions. Trigger when a user appoints a manager or director, coordinates
+  named worker sessions, uses session-to-session A2A communication, shares one
+  repository or workspace, manages context compaction or session handoff, or
+  needs architecture and rules to survive across many tasks. Preserve global
+  intent in a manager session, stable domain context in worker sessions, and
+  durable project state outside every chat. Do not trigger for ordinary one-shot
+  tasks, ephemeral subagent calls, or merely because agent tools are available.
 ---
 
-# A2A Manager Agent Orchestration
+# APM: Persistent Multi-Session Project Management
 
-Act as the non-executing control plane in an orchestrator-worker system. Preserve the user's mission and whole-system structure, assign bounded contracts, govern worker context, commission independent verification, correct failed work, and retain final acceptance authority.
+Operate an agent organization whose lifetime is longer than any one context window.
 
-Use this control loop:
-
-```text
-Reduce -> Measure -> Delegate -> Maintain -> Discipline
-```
-
-## Activation And Execution Rule
-
-Activate this protocol before planning with `TaskCreate`, inspecting a repository, researching, editing, testing, or producing an artifact. The trigger is an execution request plus an available worker-agent mechanism. Because APM is manager-only, its availability assigns the current agent to the manager role unless the current prompt is an explicit bounded leaf contract. Delegation vocabulary or a `lead` label in the user's request is not required.
-
-Once APM is active, delegation is not an architecture choice. The manager must use workers for every leaf action, including discovery, implementation, testing, verification, and root integration. Apparent simplicity is not an exception: the eventual run length and context growth cannot be reliably known before execution.
-
-When agent tools are available and the user asked for execution, run the control loop. Do not stop after writing an `A2A Plan` or `WHIPS.md`. Create the ledger, dispatch the contracts, wait for bounded returns, commission verification, issue corrections, dispatch root integration, and decide whether the verified result satisfies the mission.
-
-When no agent tools are available, return a dispatch pack and state that enforcement has not executed. Never describe a plan as though workers were actually controlled.
-
-The protocol is closed-loop:
-
-- no worker call without a recorded work unit and a return contract in the worker prompt;
-- no dependency unlock based only on dispatch, activity, or a worker's completion claim;
-- no verification by the worker that produced the artifact;
-- no integration by the manager;
-- no final completion while a required unit remains `READY`, `IN-FLIGHT`, `VERIFYING`, or `REWHIP`.
-
-## The Manager Must Be Unlazy
-
-APM applies completion discipline to the manager. Workers may use unlazy, but that is optional. The manager must continuously turn the ledger into runtime actions:
-
-- `M-UNLOCK`: notice that dependencies cleared and ready the next unit;
-- `M-DISPATCH`: send a complete contract instead of postponing or merely describing it;
-- `M-WATCH`: wait, poll, recontact, or interrupt an in-flight handler at the recorded cadence;
-- `M-VERIFY`: dispatch a fresh verifier with bounded context instead of reading leaf artifacts or trusting the producer;
-- `M-DECIDE`: accept only an independent `PASS`, or correct, reassign, discard, or abandon;
-- `M-CORRECT`: issue `REWHIP`, revoke ownership, reassign, discard, or abandon with evidence;
-- `M-INTEGRATE`: dispatch the `ROOT` integration worker and then a different root verifier.
-
-The bundled runtime hooks enforce this discipline while the skill is active:
-
-1. `PreToolUse` denies an Agent dispatch without an active ledger, then expands a one-line `APM DISPATCH: <unit>` or `APM VERIFY: <unit>` request into the canonical work-order/report envelope stored in the ledger. Incomplete, duplicated, or drifted envelopes are replaced with ledger values instead of entering a formatting retry loop.
-2. `PreToolUse` denies manager use of leaf exploration and execution tools while allowing those tools inside dispatched workers; only WHIPS control files, APM status commands, and ledger-backed task/team controls remain directly available to the manager.
-3. `SubagentStop` sends a worker or verifier back when its final message is not an accountable bounded report.
-4. `Stop` prevents the manager from finishing while computed manager duties or invalid ledger state remain. Once an execution tool has been attempted, the manager also cannot stop before creating an active ledger.
-
-Run `node "${CLAUDE_SKILL_DIR}/scripts/whips-check.mjs" --status` whenever the next manager action is unclear. Hook decisions are recorded without prompt or worker-message content in `.apm/runtime.jsonl`; summarize actual dispatch gates, corrected returns, manager stop blocks, and verified completion with `node "${CLAUDE_SKILL_DIR}/scripts/runtime-report.mjs" --json`. The event log proves that enforcement ran, but does not replace artifact proof.
-
-The manager Stop gate is strict by default. Do not retry termination to escape work. Resolve the next duty, or record an evidence-backed `DISCARDED`/`ABANDONED` disposition and handoff when completion is genuinely unwarranted or impossible. Persistent installation may explicitly opt into a six-unchanged-block emergency release with `--allow-emergency-release`.
-
-For project-wide enforcement that also catches an Agent call before automatic skill activation, ask the user once for approval and run `node "${CLAUDE_SKILL_DIR}/scripts/install-hooks.mjs"`. Never install persistent hooks silently.
-
-## The Manager Is An Overseer
-
-Use this command pyramid:
+APM does not teach modern models how to summon subagents. They already possess orchestration behavior. APM manages the harder layer: persistent ownership, project memory, context health, session succession, user authority, and verified integration across many tasks.
 
 ```text
-User: sets the mission, constraints, and completion authority
-  -> Manager: retains the blueprint, work map, state, budgets, and judgments
-       -> Workers: discover, implement, test, verify, and integrate bounded units
+Human: mission, approval, architecture authority, session creation and removal
+  -> Manager session: project memory, roster, work map, decisions, integration
+       -> Persistent worker sessions: stable domain ownership and implementation
+       -> Optional recorder/verifier sessions: measured state and independent checks
 ```
 
-The manager never becomes a spare worker. It must not inspect full source trees, search the web, edit implementation artifacts, debug, run leaf tests, rewrite worker patches, or perform root integration. It may read and update `WHIPS.md`, consume bounded reports, invoke APM control scripts, dispatch and supervise agents, and make state and acceptance decisions.
+## Activation Boundary
 
-Keep one writer for tightly coupled artifacts and serialize dependencies when necessary. Mandatory delegation does not mean mandatory parallelism or a peer swarm. A one-unit task still uses one worker, one independent verifier, and the manager's acceptance gate.
+Use APM when the unit of work is a continuing project and at least one of these is true:
 
-## Manager Context Constitution
+- several named sessions will remain available across tasks;
+- a manager or development director coordinates other sessions;
+- architecture, rules, ownership, and decisions must survive context pressure;
+- workers communicate through A2A messages or a shared repository;
+- sessions are compacted, replaced, or handed over while work continues;
+- the user explicitly asks to establish or audit an APM organization.
 
-Before the first dispatch, externalize these durable fields in `WHIPS.md`. Use the project-root `WHIPS.md`, the sibling `shared/WHIPS.md` used by team harnesses, or an explicit `APM_WHIPS_PATH`:
+Do not convert a coherent one-shot task into a hierarchy. Do not spawn workers merely to activate this protocol. If the runtime exposes only ephemeral subagents, use its native orchestration unless the user is explicitly designing a persistent project organization.
 
-- `MISSION`: the user's actual desired outcome;
-- `NON-NEGOTIABLES`: constraints that may not drift;
-- `SYSTEM MAP`: the whole structure and current work decomposition;
-- `DECISIONS`: accepted architectural and policy decisions;
-- `CONTEXT POLICY`: what the manager may retain and what must remain in worker contexts.
-
-Re-read this constitution before every dispatch, state transition, correction, and final decision. The manager context contains the constitution, ledger state, dependencies, budgets, and bounded reports. Raw source, long logs, exploratory transcripts, implementation details, and test output belong to disposable worker contexts.
-
-Every work unit declares `CONTEXT LIMIT`, `RETURN LIMIT`, and `REPLACE WHEN`. Give the worker only the smallest context slice needed for its unit. Replace the worker when it reaches the limit, compacts away critical inputs, loops, becomes stale, or crosses its ownership boundary. A replacement receives the durable contract and artifacts, not the predecessor's entire transcript.
+Activation means the organization already exists or the user wants to establish one. It never means that every leaf must be delegated.
 
 ## Prime Directive
 
-Keep the user's goal alive across every delegation. Subagents optimize the contract they receive, not the full conversation. Externalize the mission, constraints, system map, relevant decisions, ownership, expected output, inspection method, context limits, and stop condition before dispatch.
+Keep the user's intent and the project's accepted architecture alive when individual sessions forget, compact, fail, or retire.
 
-The manager remains accountable for the final result. Delegate execution and evidence production; never outsource judgment.
+The manager owns judgment but not production work. It may inspect bounded diffs, interfaces, test evidence, candidate artifacts, and project state because acceptance without inspection is blindness. It should not become the regular implementer or absorb full worker transcripts, exploratory logs, and local debugging history.
 
 ## The Five Operations
 
-These are executable controls, not themes. Before each worker dispatch, the ledger must show how all five are being applied. If one is missing, the unit is not `READY`.
+The historical abstractions remain, but their unit is now the project lifecycle rather than one tool call.
 
 ### 1. Reduce
 
-Turn the objective into bounded, independently inspectable work units. Each unit needs an objective, scope, inputs, expected output, constraints, success criteria, dependencies, and stop condition.
+Divide the project into durable workstreams with meaningful ownership boundaries. Do not atomize a task into disposable calls when one persistent session can carry the domain context.
 
-Split at real domain, context, ownership, or verification boundaries. A small task may remain one work unit, but that unit is still executed outside the manager context.
+Record:
 
-**Required control:** write a work census in `WHIPS.md`. Give every unit one observable output, one handler, one ownership lease, and explicit dependencies. A unit with overlapping writes, an unobservable output, or an unspecified stop condition remains `WAITING`; it is not dispatchable.
+- the project mission and current phase;
+- non-negotiable rules and architecture invariants;
+- workstreams, dependencies, interfaces, and one current owner;
+- decisions that affect more than one session;
+- coupled files or resources that require one writer or an explicit lock.
 
 ### 2. Measure
 
-Define proof before dispatch. Prefer evidence that can be independently reproduced:
+Separate what was measured from what was reported, planned, or remains unknown.
 
-- exact artifacts and paths;
-- commands, exit codes, and decisive output;
-- source URLs and claim-level citations;
-- reproduction steps and observed behavior;
-- changed files and preserved interfaces;
-- unresolved uncertainty and confidence boundaries.
+Measure cumulative project health:
 
-Activity, confidence, token use, and a checked box are not proof by themselves.
+- accepted features and verified artifacts;
+- regressions, rework, reversions, and unresolved integration;
+- architecture and rule violations;
+- context-health signals and session replacements;
+- elapsed time, cost, and throughput when available.
 
-**Required control:** set a `NORM`, `BUDGET`, `CONTEXT LIMIT`, and `RETURN LIMIT` before work begins, then require an `ACCOUNT` and `CONTEXT ACCOUNT` after return. The norm states the expected quantity, quality, proof, and completion boundary. The accounts compare expected work with actual output, usage, context exposure, unfinished work, and deviations. Return the worker to the account when its explanation and the artifacts disagree.
+A worker's statement is a report. A current commit, file, test, rendered artifact, or reproduced observation is measured evidence. Preserve both without confusing them.
 
 ### 3. Delegate
 
-Assign a contract, not a wish. Every contract states:
+Prefer stable ownership. Give related follow-up work to the session that already holds the useful context unless its context is stale, contaminated, or no longer aligned.
 
-- the user's actual objective;
-- the handler's narrow role;
-- the minimum sufficient context and prior decisions;
-- the worker context ceiling, bounded return size, and replacement condition;
-- `OWNS` paths or read-only scope;
-- required method and prohibited changes;
-- output format and durable artifact path when applicable;
-- inspection and proof requirements;
-- active watch cadence and recontact condition;
-- dependencies, budget, escalation condition, and stop condition.
+Every assignment carries the minimum durable contract:
 
-Every child must receive the complete [Worker Dispatch Envelope](#worker-dispatch-envelope). Skills and manager context are not assumed to propagate into a child agent. With the runtime hook active, dispatch using only `APM DISPATCH: <unit id>`; the hook generates the complete prompt from the active ledger. Without hook support, render and send the full envelope manually.
+- user objective and applicable exact user directives;
+- workstream, scope, ownership, and dependencies;
+- relevant invariants, interfaces, and accepted decisions;
+- expected artifact and evidence;
+- escalation conditions and the decision that remains with the manager or user.
 
-Use parallel dispatch only when dependencies are satisfied and write ownership is disjoint. Treat `OWNS` as coordination, not filesystem isolation or a security boundary.
-
-**Required control:** maintain one reporting hierarchy. Workers report to the manager; they do not silently redefine sibling contracts or certify their own output. A designated `ROOT` worker performs integration. The manager is the sole authority that assigns ownership, changes dependencies, accepts independent proof, and declares the final result accepted.
+Use natural language. A2A messages must preserve these meanings, not reproduce a byte-exact envelope. Runtime validation reports missing semantics with expected values; it must not trap a model in formatting retries.
 
 ### 4. Maintain
 
-Keep the run coherent while workers execute:
+Treat useful context as an asset. Keep it near the work that created it, checkpoint it before compression, and replace it only when continuity becomes unreliable.
 
-- refresh missing context and propagate user changes;
-- preserve decisions and intermediate artifacts outside chat history;
-- watch dependencies, duplicate effort, ownership, time, and token budget;
-- stop obsolete work and unblock newly ready units;
-- keep the manager's context limited to the mission constitution, state, budgets, and bounded evidence summaries.
+Maintain two complementary memories:
 
-After dispatch, use the runtime's wait, join, read, or follow-up mechanism to collect every required report. A launched worker is not a completed work unit. Persist enough state in `WHIPS.md` to resume the loop if the runtime returns control between stages.
+- **global memory:** mission, invariants, architecture, roster, decisions, dependencies, and integration state;
+- **local memory:** source exploration, implementation details, test history, and domain-specific working knowledge.
 
-**Required control:** preserve productive capacity. Supply each worker with current decisions, exact inputs, working tools, and bounded time, call, token, and return budgets. Require a context account at completion, on blockage, before an out-of-scope decision, and at the stated budget threshold when the runtime permits checkpoints. Stop or replace a worker whose context is stale, contaminated, compacted past critical inputs, looping, or no longer aligned with the user's goal.
+The manager carries global memory. Workers carry local memory. Durable state on disk allows both to be refreshed or succeeded without replaying full transcripts.
 
 ### 5. Discipline
 
-Judge outputs against the original contract through an independent verifier:
+Make claims answerable to evidence and make failures change state.
 
-- request missing evidence;
-- reject unsupported completion claims;
-- issue a focused `REWHIP` when a result is recoverable;
-- reassign when a handler is stuck or its context is contaminated;
-- discard work whose assumptions conflict with the accepted plan;
-- quarantine useful but unverified claims;
-- dispatch a verifier different from the producing handler;
-- dispatch root integration only after every dependency has independent `PASS` evidence.
+- Do not treat a completion claim as accepted work.
+- Inspect current artifacts at a depth proportional to risk.
+- Use a fresh verifier for consequential, disputed, security-sensitive, or cross-workstream changes; do not require one for every trivial return.
+- Reassign or replace a session after repeated contradiction, silent scope reduction, fabricated inspection, or context drift.
+- Preserve failed attempts and corrections instead of rewriting history.
+- Ask the human for architecture changes, session creation or removal, destructive actions, and any decision reserved in project state.
 
-Missing report fields, silent scope changes, unowned edits, or unsupported completion claims are protocol breaches. Keep dependent units blocked and issue a specific `REWHIP`; do not continue downstream while hoping the missing evidence will appear later.
+Discipline is not the number of blocked tool calls. It is the preservation of authority, evidence, ownership, and project continuity.
 
-**Required control:** apply a visible correction ladder. First hold the gate and demand the missing account or proof. Then issue a bounded `REWHIP`. On repeated failure, revoke the ownership lease and reassign with clean context. Discard incompatible output; abandon only with a recorded reason and handoff. The consequence is a state and ownership change, not another reminder to be careful.
+## Durable Project State
 
-The term `REWHIP` means a corrective agent dispatch recorded in the manager ledger.
-
-## Five-Control Dispatch Gate
-
-Before every worker call, answer these in the ledger:
+Use `.apm/project.json` as the canonical structured state. Read [WHIPS.md](WHIPS.md) for the schema and operating rules.
 
 ```text
-REDUCE: What exact unit, owner, boundary, and dependency is being dispatched?
-MEASURE: What norm, resource budget, context limit, return limit, and reproducible proof will settle the account?
-DELEGATE: What written order and reporting line bind the handler?
-MAINTAIN: What minimal context slice, tools, checkpoint, and replacement condition preserve capacity without entering manager context?
-DISCIPLINE: What gate closes on failure, and what REWHIP, reassignment, or discard follows?
+.apm/
+  project.json                 canonical project, roster, work, and decision state
+  checkpoints/<session>.md    compact local continuity packet
+  handoffs/<handoff>.md       immutable succession packet
+  local/                      optional uncommitted runtime data
 ```
 
-If any answer is missing, do not dispatch. Read [references/operational-controls.md](references/operational-controls.md) for the traceability map from the historical abstractions to these runtime controls.
+Commit `project.json`, checkpoints, and accepted handoffs when the repository is the project's durable memory. Keep secrets and raw transcripts out of them.
 
-## WHIPS Ledger
+Initialize and inspect state with the bundled zero-dependency CLI:
 
-For substantial delegated work, create `WHIPS.md` from [templates/WHIPS.md](templates/WHIPS.md) before dispatch. Read [WHIPS.md](WHIPS.md) for the full contract.
+```bash
+node <skill-dir>/scripts/apmctl.mjs init --name "Project name"
+node <skill-dir>/scripts/apmctl.mjs validate
+node <skill-dir>/scripts/apmctl.mjs status
+node <skill-dir>/scripts/apmctl.mjs brief --session manager-1
+```
+
+The CLI validates references and lifecycle invariants. It does not decide whether to delegate, block ordinary tools, or claim that state correctness proves artifact correctness.
+
+## Human Authority
+
+The human remains above the manager.
+
+- Record approvals as exact quotations with their task and scope. A summary or another session's claim that approval exists is not approval.
+- Do not extend approval from commit to deployment, from one workstream to another, or from one session generation to the next without recorded scope.
+- Session creation, retirement, and final architecture authority belong to the human unless explicitly delegated.
+- The human may speak directly with any session. Copy consequential new instructions into project state and notify affected owners; do not treat the manager as a communications censor.
+- Report uncertainty and managerial mistakes with the same weight as worker mistakes.
+
+## Session Roles
+
+### Manager
+
+Retain the mission, invariants, system map, roster, workstream ownership, unresolved decisions, and integration state. Assign work, reconcile reports with measured state, inspect bounded artifacts, coordinate shared resources, and request session changes from the user.
+
+Do not carry routine implementation history. When the manager context degrades, prepare a two-phase handoff instead of trying to remain immortal.
+
+### Worker
+
+Own a stable domain or workstream. Verify that an assignment is still current before editing, preserve relevant local context, expose scope changes, checkpoint before compaction, and return artifacts plus evidence and unresolved decisions.
+
+### Recorder
+
+Maintain state from measurements rather than hearsay. Keep snapshots immutable, update the current view, distinguish actual from planned values, and leave unknown facts marked unknown. This role may be separate when the project is large enough to justify it.
+
+### Verifier Or Integrator
+
+Inspect the current candidate in isolation when risk warrants it. Preserve artifact lineage and verify the actual integrated state, not a producer's remembered version. This can be a temporary role assigned to an existing session; it does not require a permanent agent for every unit.
+
+## Context Health
+
+Do not use nominal context-window size as the only signal. Mark a session `amber` or `red` when observable behavior indicates loss of coherence:
+
+- it forgets or contradicts an accepted decision;
+- it repeats a resolved investigation without new evidence;
+- it misidentifies its ownership or current project phase;
+- it silently narrows the assignment or reports unperformed inspection;
+- it cannot state the next action and decisive blocker;
+- compaction removed critical inputs;
+- reports and rereads grow while verified progress stalls.
+
+`amber` calls for a checkpoint, narrowed working set, and explicit refresh. `red` calls for handoff or replacement. Token and turn counts are useful telemetry, not sufficient proof of health.
+
+## Worker Compaction
+
+Before compacting a worker session:
+
+1. Write a checkpoint containing the current objective, scope, relevant invariants, changed artifacts, measured evidence, unresolved decisions, blockers, and next action.
+2. Record the checkpoint path and context health in `.apm/project.json`.
+3. Compact the session.
+4. Re-read the assignment, checkpoint, and applicable decisions.
+5. Return a short continuity check: objective, ownership, next action, and largest unresolved risk.
+
+If the continuity check disagrees with durable state, stop work and repair or replace the session.
+
+## Manager Succession
+
+Manager replacement is a normal lifecycle event, not a failure.
+
+1. Freeze new assignments long enough to snapshot current state.
+2. Prepare a handoff packet with mission, exact directives, invariants, architecture, roster, active and blocked work, decisions, risks, evidence locations, and next actions.
+3. Start the successor as a new generation; do not overwrite the predecessor's identity.
+4. Require the successor to acknowledge the mission, invariants, current phase, largest risk, and next three actions.
+5. Compare that acknowledgement with durable state, correct discrepancies, then transfer manager authority.
+
+Use:
+
+```bash
+node <skill-dir>/scripts/apmctl.mjs handoff --from manager-1 --to manager-2
+node <skill-dir>/scripts/apmctl.mjs accept-handoff --id H1 --ack-file .apm/handoffs/H1-ack.md
+```
+
+The old manager remains authoritative until acceptance succeeds.
+
+## A2A Message Semantics
+
+Use ordinary prose, but make the message type and decision boundary visible.
 
 ```text
-W - Work Unit: the bounded assignment and its dependency contract
-H - Handler: the producer and its ownership lease
-I - Inspection: what a fresh verifier must independently examine
-P - Proof: the bounded evidence required for manager acceptance
-S - State: the manager-owned lifecycle state
+TYPE: ORDER | CHECK-IN | QUESTION | DECISION | RETURN | HANDOFF
+FROM / TO: persistent session ids
+WORKSTREAM: affected id or project-wide
+FACTS: measured facts, reported claims, and unknowns kept distinct
+ARTIFACTS / EVIDENCE: exact paths, commits, checks, or observations
+DECISION NEEDED: who must decide what, or none
+CONTEXT HEALTH: green, amber, red, or unknown
+NEXT: next action and owner
 ```
 
-Use only these states:
+Fields may be expressed naturally and combined when the meaning is unambiguous. Never reject useful work because punctuation or capitalization differs.
 
-```text
-WAITING -> READY -> IN-FLIGHT -> VERIFYING -> VERIFIED
-                                  |             |
-                                  -> REWHIP ----+
-                                  -> DISCARDED
-Any active state -> ABANDONED with a reason and handoff
-```
+## Integration And Shared Workspaces
 
-Only the manager changes a unit to `VERIFIED`, and only after a different verifier returns current `PASS` evidence. A producer's self-report may move a unit to `VERIFYING`, never directly to `VERIFIED`.
-
-## Closed Manager Loop
-
-1. Write the mission constitution: objective, non-negotiables, system map, accepted decisions, and context policy.
-2. Create `WHIPS.md` before any repository inspection or leaf action. Record producer, verifier, context limits, dependencies, ownership, proof, and both return contracts.
-3. For each `READY` unit, call the worker with `APM DISPATCH: <unit id>`. The hook expands the canonical envelope from `WHIPS.md`; record the call or session identity, then move it to `IN-FLIGHT`.
-4. Wait for and collect a bounded work report. Do not ingest the worker transcript or treat launch, activity, or confidence as acceptance evidence.
-5. Validate `ACCOUNT` and `CONTEXT ACCOUNT`. If required fields or evidence are missing, keep dependents blocked, record `REWHIP`, and send a corrective contract or replace the context.
-6. Move a conforming return to `VERIFYING`, then call a fresh verifier with `APM VERIFY: <unit id>`. The hook expands the verification envelope, and the verifier must be different from the producer.
-7. Accept only a conforming `APM VERIFY REPORT` with `VERDICT: PASS`. Otherwise issue `REWHIP`, replace, reassign, discard, or abandon.
-8. Mark the unit `VERIFIED` only with bounded `PASS` evidence and a manager-owned reason.
-9. Unlock a dependent unit only after every id in `NEEDS` is `VERIFIED`.
-10. Dispatch `ROOT` to a dedicated integration worker after all dependencies verify, then dispatch a different root verifier.
-11. Finish only when `ROOT` is `VERIFIED` or explicitly `ABANDONED`. Report unresolved conflicts, residual risk, and every discard or abandonment.
-
-## Worker Dispatch Envelope
-
-This is the canonical envelope the runtime generates from `WHIPS.md`. Prefer the one-line `APM DISPATCH: <unit id>` interface so the manager does not hand-author or duplicate fields. If hooks are unavailable, put this entire envelope in the child-agent prompt.
-
-```markdown
-APM WORK ORDER: <unit id>
-USER OBJECTIVE: <the user's preserved objective>
-WORK UNIT: <one bounded assignment>
-HANDLER ROLE: <narrow role>
-NEEDS: <verified unit ids or none>
-CONTEXT: <minimum context and accepted decisions>
-CONTEXT LIMIT: <maximum input tokens and worker tool calls>
-RETURN LIMIT: <integer chars>
-REPLACE WHEN: <context, loop, staleness, or scope threshold>
-OWNS: <exact paths or read-only scope>
-DO NOT: <prohibited changes or none>
-METHOD: <required method>
-OUTPUT: <exact artifact or response>
-INSPECTION: <contract-bound inspection for a fresh verifier>
-PROOF: <reproducible acceptance evidence>
-NORM: <quantity, quality, proof, and completion boundary>
-BUDGET: <time, tokens, calls, or other limit>
-WATCH: <wait, poll, recontact, or interrupt cadence>
-REPORT WHEN: complete | blocked | before scope change | at budget threshold
-ESCALATE IF: <condition requiring a manager decision>
-STOP WHEN: <completion or evidenced blocker condition>
-
-Return exactly this one report, with every value on one line:
-APM WORK REPORT
-UNIT: <unit id>
-STATUS: COMPLETE | BLOCKED | PARTIAL
-OUTPUTS: <exact paths, patch, commit, findings, or none>
-UNFINISHED: <required work not completed, or none>
-PROOF: <command and exit code, source evidence, or observable check>
-CHANGES: <files, interfaces, and decisions changed>
-ACCOUNT: <norm achieved, budget used, and deviations>
-CONTEXT ACCOUNT: <context supplied, tool calls used, compaction or limit status>
-ASSUMPTIONS: <remaining assumptions or none>
-RISKS: <residual risks or none>
-MANAGER DECISION: <specific decision needed or none>
-```
-
-The runtime gate requires every order field to be non-empty and binds mission, handler, context, limits, replacement condition, ownership, output, inspection, proof, norm, budget, and watch cadence to `WHIPS.md`. Missing, duplicated, or weakened fields are replaced with the canonical ledger values. An unknown unit or invalid lifecycle state remains blocked, with a complete valid envelope included in the rejection.
-
-For runtimes that support an acknowledgement round, require the worker to confirm the unit id, owned scope, and blockers before changing artifacts. For one-shot worker tools, the final report remains mandatory.
-
-## Worker Return Protocol
-
-Require every handler to return this shape in its tool result or message:
-
-```markdown
-APM WORK REPORT
-UNIT: <unit id>
-STATUS: COMPLETE | BLOCKED | PARTIAL
-OUTPUTS: <exact paths, patch, commit, findings, or none>
-UNFINISHED: <required work not completed, or none>
-PROOF: <command and exit code, source evidence, or observable check>
-CHANGES: <files, interfaces, and decisions changed>
-ACCOUNT: <norm achieved, budget used, and deviations>
-CONTEXT ACCOUNT: <context supplied, tool calls used, compaction or limit status>
-ASSUMPTIONS: <remaining assumptions or none>
-RISKS: <residual risks or none>
-MANAGER DECISION: <specific decision needed or none>
-```
-
-Reject malformed reports before evaluating their substantive claim. A `COMPLETE` report moves the unit only to `VERIFYING`. A `BLOCKED` or `PARTIAL` report must identify the blocker and the smallest manager action that can unblock it; otherwise issue `REWHIP` for a proper report.
-
-Then dispatch the independent verifier. The manager reads its bounded report, not the leaf artifact or transcript.
-
-## Independent Verification Envelope
-
-After a producer return reaches `VERIFYING`, prefer `APM VERIFY: <unit id>`. The runtime generates this complete envelope for a fresh verifier; use it manually only where hooks are unavailable:
-
-```markdown
-APM VERIFY ORDER: <unit id>
-USER OBJECTIVE: <the preserved mission>
-VERIFY UNIT: <the exact work-unit title>
-VERIFIER ROLE: <a verifier different from HANDLER>
-CONTEXT: <bounded verification inputs and accepted decisions>
-ARTIFACTS: <exact returned artifacts>
-INSPECTION: <contract-bound inspection>
-PROOF: <contract-bound reproducible proof>
-CONTEXT LIMIT: <maximum input tokens and verifier tool calls>
-RETURN LIMIT: <integer chars>
-STOP WHEN: decisive checks finish or an evidenced blocker is found
-
-Return exactly this one report, with every value on one line:
-APM VERIFY REPORT
-UNIT: <unit id>
-VERDICT: PASS | FAIL | BLOCKED
-CHECKS: <checks actually performed>
-PROOF: <decisive evidence>
-GAPS: <missing or failed requirements, or none>
-CONTEXT ACCOUNT: <context supplied, tool calls used, compaction or limit status>
-RISKS: <residual risks or none>
-MANAGER DECISION: <specific correction or acceptance decision needed>
-```
-
-The producer cannot be its own verifier. `PASS` requires `GAPS: none`. A failed or blocked verification keeps dependencies closed and gives the manager a correction decision; it never becomes a prose warning attached to accepted work.
-
-## Integration Rules
-
-- Preserve provenance for every accepted claim and artifact.
-- Treat disagreement as a verification task, not something to average away.
-- Do not merge partial results whose assumptions or interfaces conflict.
-- Re-run cross-unit tests after local checks pass.
-- Keep one writer for tightly coupled artifacts unless ownership and merge semantics are explicit.
-- Give the `ROOT` integrator exact verified patches, commits, artifacts, or cited findings. The manager must not reconstruct, paraphrase, or rewrite them.
-- Use a root verifier different from the root integrator and expose only its bounded report to the manager.
-- Label useful but unverified material as unverified.
-- Surface discarded and abandoned work in the final report when it affects scope or confidence.
+- Keep one active owner for a coupled artifact.
+- Verify current ancestry and current files before assigning work from a stale board.
+- Do not use another session's staged files or uncommitted work implicitly.
+- Preserve exact candidate provenance through verification and integration.
+- Let the manager inspect bounded candidates and integration evidence.
+- For software projects sharing one worktree, read [references/software-project-profile.md](references/software-project-profile.md).
 
 ## Failure Modes
 
-- **Context amnesia:** a worker solves an older or narrower objective.
-- **Manager context leakage:** raw source, logs, or implementation transcripts enter the control-plane context.
-- **Role collapse:** the manager performs a leaf action because it appears faster than dispatch.
-- **Context overrun:** a worker exceeds its context or return limit without replacement.
-- **Contract gap:** the manager leaves scope, output, or proof undefined.
-- **Parallel contradiction:** workers make incompatible implicit decisions.
-- **Commitment failure:** a worker promises a path and silently takes another.
-- **Expectation failure:** a worker reasons from an incorrect model of another unit.
-- **Tool theater:** activity is presented as evidence.
-- **Premature completion:** success is claimed without current verification.
-- **Over-broad edits:** a worker changes unowned files or interfaces.
-- **Citation laundering:** secondary summaries are presented as primary evidence.
-- **Integration fog:** the root integrator combines outputs without resolving conflicts.
+- **Microscopic hierarchy:** coordination is imposed before context pressure can exist.
+- **Disposable expertise:** a useful worker is replaced after every task and must rediscover the domain.
+- **Immortal manager:** one supervisory session accumulates context until it loses the blueprint.
+- **Blind manager:** implementation is separated correctly, but artifact inspection is also forbidden.
+- **Report reality:** worker prose replaces measured repository or artifact state.
+- **Approval laundering:** a summary or peer message is treated as the user's authorization.
+- **State rewriting:** an old snapshot is edited instead of recording a new fact and its source.
+- **Shared-tree collision:** ownership exists in prose but not at the file or resource boundary.
+- **Compaction amnesia:** a session compacts without a durable checkpoint and resumes from inference.
+- **Succession drift:** a new manager receives activity history but not mission, invariants, decisions, and authority scope.
+- **Orchestration excess:** agent count and control activity grow faster than accepted project output.
 
-When a failure appears, update `WHIPS.md`, tighten the contract, and commission fresh verification. Do not merely remind the worker to "be careful."
+## Operating Modes
 
-## Pair With unlazy
+### Establish Organization
 
-When a substantial worker has unlazy available, read [references/interoperability.md](references/interoperability.md). APM controls the manager's `WHIPS.md`; unlazy controls each worker's runnable `GATES.md`. The APM work order and return schema must still be present in the child prompt because worker-side skill activation is not guaranteed. A fresh APM verifier still checks the leaf evidence before manager acceptance.
+Create the project state, record the human authority and exact directives, name the manager generation, register persistent sessions, define stable scopes, and seed the first workstreams.
 
-APM's manager-runtime Stop-hook progress guard and installer structure are adapted from unlazy under the MIT License. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The borrowed mechanism is deliberately inverted: unlazy keeps a worker from declaring its own leaf complete too early; APM keeps the manager from ceasing supervision too early.
+### Director Run
 
-## Output Modes
+Read current state, reconcile reports with measurements, assign or rebalance work, inspect bounded candidates, propagate decisions, monitor context health, and keep integration coherent.
 
-### Live Manager Run
+### Context Audit
 
-When the user asks the lead to execute and the runtime supports agent tools, create the ledger and carry the closed manager loop through producer dispatch, bounded return, independent verification, correction, delegated root integration, and root verification. The final response is the manager's acceptance decision, not merely the plan.
+Identify drift signals, stale ownership, missing checkpoints, overgrown manager context, and sessions due for compact or replacement.
 
-### A2A Plan
+### Succession
 
-Return the mission constitution, work units, dependencies, producers, verifiers, context limits, proof, and delegated root-integration strategy.
+Prepare and accept a manager or worker handoff without replaying the full transcript.
 
-### Dispatch Pack
+### Project Review
 
-Return ready-to-send contracts for every `READY` work unit.
+Compare cumulative throughput, architecture adherence, rework, context events, cost, and unresolved integration across a meaningful project interval.
 
-### Manager Audit
+## Related Material
 
-Audit mission preservation, role separation, contracts, context limits, evidence, ownership, state transitions, integration, and failure modes. Produce corrective `REWHIP` instructions where needed.
-
-### Final Integration Report
-
-Report verified outcomes, independent proof accepted by the manager, conflicts resolved, discarded or abandoned work, residual risks, and remaining decisions.
-
-## Research Routing
-
-If the user asks whether multi-agent execution is justified or requests the evidence behind this protocol, read [references/research.md](references/research.md). Do not claim that APM proves multi-agent superiority or that lower token prices remove coordination costs.
+- [WHIPS state and succession specification](WHIPS.md)
+- [Software project profile](references/software-project-profile.md)
+- [Operational controls](references/operational-controls.md)
+- [APM and unlazy interoperability](references/interoperability.md)
+- [Experimental lineage and falsified designs](references/experiments.md)
+- [Research claim ledger](references/research.md)
+- [Historical origin](references/history.md)

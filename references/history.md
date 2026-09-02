@@ -22,12 +22,12 @@ In APM, that becomes a `Manager Audit`:
 
 | Cato's administrative move | APM control |
 | --- | --- |
-| Inspect the estate before hearing the report | Commission a fresh verifier before accepting the producer's bounded report |
-| Ask what is complete and incomplete | Track explicit work-unit states |
-| Calculate labor and time | Measure budget, context, tools, and evidence |
+| Inspect the estate before hearing the report | Reconcile session reports with current measured artifacts |
+| Ask what is complete and incomplete | Track durable workstreams, outputs, blockers, and unknowns |
+| Calculate labor and time | Measure cumulative output, rework, context health, cost, and evidence |
 | Return the overseer to the account | Reject unsupported completion claims |
 | Review accounts and inventory | Preserve provenance and proof |
-| Leave directions in writing | Dispatch bounded contracts |
+| Leave directions in writing | Preserve exact directives, scope, ownership, and decisions across sessions |
 
 The mapping is analytical, not moral. Cato's estate included enslaved people treated as inventory, and the text's brutality is inseparable from its administrative clarity. That starkness is precisely why the control structure is easy to see.
 
@@ -48,7 +48,7 @@ For APM, the useful abstraction is narrower:
 - a delegated system fails when the principal cannot see state;
 - maintenance of worker context and tools protects output capacity;
 - proof must be recorded at the unit where work occurs;
-- the manager must own correction and acceptance while delegating integration;
+- the manager must own correction and acceptance while inspecting integration evidence;
 - exclusive responsibility is meaningful only when paired with auditable evidence.
 
 Primary text: ["Management of Negroes upon Southern Estates"](https://penelope.uchicago.edu/Thayer/E/Gazetteer/Places/America/United_States/Tennessee/_Texts/THM/5/2/Management_of_Negroes*.html), a public-domain reprint in *Tennessee Historical Magazine*. The page also reproduces related 1853 rules attributed to St. George Cocke.
@@ -57,7 +57,7 @@ Primary text: ["Management of Negroes upon Southern Estates"](https://penelope.u
 
 Ancient owners escaped portions of physical labor through coerced human labor. Industrial machinery later replaced or amplified much of that labor. AI systems now let people delegate parts of search, analysis, implementation, and verification.
 
-The analogy is intentionally abrasive because it exposes a recurring temptation: to hand off not only execution but judgment. APM draws a firm line between the two. The manager delegates every leaf action while retaining the objective, system map, acceptance standard, and final decision.
+The analogy is intentionally abrasive because it exposes a recurring temptation: to hand off not only execution but judgment. APM draws a firm line between the two. The manager preserves the objective, system map, authority, and final decision while stable worker sessions retain useful local execution context.
 
 That is the modern point of the historical reading. The texts are unusually explicit demonstrations of control under information asymmetry. APM turns the extracted grammar into an artificial-agent protocol:
 
@@ -65,4 +65,4 @@ That is the modern point of the historical reading. The texts are unusually expl
 Reduce -> Measure -> Delegate -> Maintain -> Discipline
 ```
 
-The unit of control is no longer a person. It is a bounded agent run, its context, artifacts, proof, and integration state.
+The unit of control is no longer a person. It is a persistent workstream and session lifecycle: ownership, context health, checkpoints, artifacts, proof, integration, and succession across a project that outlives any one chat.

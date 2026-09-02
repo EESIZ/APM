@@ -1,0 +1,43 @@
+{
+  "schema_version": 2,
+  "project": {
+    "name": "Example Project",
+    "mission": "Replace with the outcome that must survive every session",
+    "phase": "setup",
+    "status": "draft",
+    "human_authority": "user",
+    "manager_session": "manager-1"
+  },
+  "directives": [],
+  "invariants": [],
+  "architecture": [],
+  "sessions": [
+    {
+      "id": "manager-1",
+      "role": "manager",
+      "generation": 1,
+      "scope": "project-wide coordination",
+      "status": "active",
+      "context": {
+        "health": "green",
+        "last_checkpoint": null,
+        "checkpoint_sha256": null,
+        "last_refresh": null,
+        "compactions": 0,
+        "signals": [],
+        "next_action": "register persistent worker sessions"
+      }
+    }
+  ],
+  "workstreams": [],
+  "decisions": [],
+  "observations": [],
+  "handoffs": [],
+  "reviews": [],
+  "cadence": {
+    "manager_review": "after every milestone, architecture decision, or context-health change",
+    "worker_checkpoint": "before compact, handoff, scope transfer, or red context",
+    "project_review": "at a stable interval chosen by the human"
+  },
+  "updated_at": null
+}

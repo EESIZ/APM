@@ -2,7 +2,9 @@
 
 ## unlazy
 
-The APM manager-runtime Stop-hook progress guard and hook installer structure are adapted from [unlazy](https://github.com/Leonxlnx/unlazy), Copyright (c) 2026 Leonxlnx, under the MIT License.
+APM v1-v4 adapted the manager Stop-hook progress guard and installer structure from [unlazy](https://github.com/Leonxlnx/unlazy), Copyright (c) 2026 Leonxlnx, under the MIT License.
+
+APM 2.0 removed that hook implementation. The notice remains because the historical releases and Git history retain the adapted work.
 
 ```text
 MIT License

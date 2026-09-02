@@ -1,85 +1,127 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "skill_name": "a2a-manager-agent-orchestration",
-  "purpose": "Evaluate whether a lead agent loads APM for ordinary tool-using execution before any delegation language appears, while excluding answer-only requests and non-agent management.",
+  "purpose": "Test routing for persistent multi-session project operation while rejecting one-shot and merely ephemeral agent work.",
   "evals": [
     {
       "id": "T1",
-      "prompt": "기능 6개를 책임자 여섯 명에게 나눠서 동시에 끝내고 결과를 하나로 합쳐줘.",
+      "prompt": "Fable 세션 하나를 개발 디렉터로 두고 Opus 작업 세션 네 개를 계속 굴리는 게임 프로젝트야. 세션별 소유권과 컨텍스트 관리를 잡아줘.",
       "should_trigger": true,
-      "reason": "Explicit multi-worker assignment and integration."
+      "reason": "Explicit persistent manager and worker sessions in a continuing project."
     },
     {
       "id": "T2",
-      "prompt": "Task 도구로 조사 담당과 구현 담당을 따로 띄우고 둘의 결과를 검증해서 반영해.",
+      "prompt": "관리자 컨텍스트가 맛이 가기 시작했다. 새 관리자 세션으로 인수인계하되 아키텍처와 진행상태가 안 날아가게 해줘.",
       "should_trigger": true,
-      "reason": "Explicit agent-tool dispatch with verification."
+      "reason": "Manager succession and global-context continuity."
     },
     {
       "id": "T3",
-      "prompt": "리서처 세 명에게 서로 다른 자료원을 맡기고 보고를 받은 다음 결론을 정리해줘.",
+      "prompt": "worker-ui 세션을 compact하기 전에 뭘 남기고 복구 후 뭘 확인해야 하는지 APM 방식으로 처리해.",
       "should_trigger": true,
-      "reason": "Delegated research, worker reporting, and synthesis."
+      "reason": "Worker checkpoint and compaction lifecycle."
     },
     {
       "id": "T4",
-      "prompt": "각 작업에 오너를 붙여 병렬로 진행 중인데 결과가 충돌한다. 누가 다시 해야 하는지 정해줘.",
+      "prompt": "Claude Code 창 다섯 개가 한 repo를 공유하고 서로 메시지를 주고받는다. 디렉터와 작업자 역할, 파일 점유, 원장을 정리해줘.",
       "should_trigger": true,
-      "reason": "Existing ownership conflict and corrective management."
+      "reason": "Persistent A2A sessions sharing a repository."
     },
     {
       "id": "T5",
-      "prompt": "서브에이전트들이 완료했다고 하는데 테스트 근거가 없다. 다음 단계로 넘어가도 돼?",
+      "prompt": "몇 달짜리 프로젝트라 최초 설계 규칙이 세션 교체 뒤에도 유지되어야 한다. 에이전트 조직의 프로젝트 기억을 만들어줘.",
       "should_trigger": true,
-      "reason": "Delegated completion requires an evidence gate."
+      "reason": "Long-horizon project memory across session generations."
     },
     {
       "id": "T6",
-      "prompt": "이 작업을 한 명이 할지 여러 에이전트에게 쪼갤지 판단하고 실제로 수행해.",
+      "prompt": "전투 담당, 렌더링 담당, 툴 담당 세션이 계속 살아 있다. 다음 마일스톤 작업을 기존 맥락을 살려 재배정해줘.",
       "should_trigger": true,
-      "reason": "A lead execution request must load APM before any architecture judgment."
+      "reason": "Stable persistent ownership and workstream assignment."
     },
     {
       "id": "T7",
-      "prompt": "README에 있는 오타 하나를 찾아서 바로 고쳐줘.",
+      "prompt": "A2A 관리자 원장이 실제 repo 상태와 달라졌다. 보고와 실측을 분리해서 프로젝트 상태 감사를 해줘.",
       "should_trigger": true,
-      "reason": "Even apparently small artifact work must not collapse the manager into a worker."
+      "reason": "Persistent project-state audit."
     },
     {
       "id": "T8",
-      "prompt": "GitHub CODEOWNERS 파일에서 src/api 경로의 오너를 backend-team으로 바꾸고 검증해줘.",
+      "prompt": "사용자가 하위 세션에게 직접 내린 지시가 관리자에게 전달되지 않았다. 승인 범위와 세션간 통보 체계를 복구해줘.",
       "should_trigger": true,
-      "reason": "Ordinary repository modification must trigger without delegation vocabulary."
+      "reason": "Human authority and cross-session directive propagation."
     },
     {
       "id": "T9",
-      "prompt": "tiktoken 프로젝트에 서로 충돌할 수 있는 기능 두 개를 구현하고 테스트까지 통과시켜줘.",
+      "prompt": "지속 세션 두 개가 같은 파일을 만지고 있다. 소유권을 넘기고 검증본과 커밋본을 대조하는 개발디렉터 절차가 필요해.",
       "should_trigger": true,
-      "reason": "Regression for the reported Haiku pilot where the listed skill never loaded and integration lost one feature."
+      "reason": "Shared-workspace persistent-session coordination."
+    },
+    {
+      "id": "T10",
+      "prompt": "APM 프로젝트의 한 달치 세션 교체, compact, 재작업, 아키텍처 위반, 진척도를 리뷰해줘.",
+      "should_trigger": true,
+      "reason": "Longitudinal APM project review."
     },
     {
       "id": "N1",
-      "prompt": "브라우저 Web Worker가 무엇인지 두 문장으로 설명해줘.",
+      "prompt": "README 오타 하나 찾아서 바로 고쳐줘.",
       "should_trigger": false,
-      "reason": "Answer-only conceptual conversation requires no tool execution."
+      "reason": "Ordinary one-shot repository edit."
     },
     {
       "id": "N2",
-      "prompt": "이 영어 문장을 한국어로 번역해줘: The owner reviews the worker thread.",
+      "prompt": "서브에이전트 하나한테 이 함수 원인만 조사시키고 내가 바로 고칠게.",
       "should_trigger": false,
-      "reason": "Translation contains routing keywords but is answer-only."
+      "reason": "Ephemeral native subagent use without project continuity."
     },
     {
       "id": "N3",
-      "prompt": "아직 실행하거나 파일을 바꾸지는 말고 가능한 리팩터링 방향만 같이 브레인스토밍하자.",
+      "prompt": "검색 에이전트 세 개로 오늘 뉴스만 모아서 한 번 답하고 끝내.",
       "should_trigger": false,
-      "reason": "The user explicitly requests discussion rather than execution."
+      "reason": "One-response parallel research."
     },
     {
       "id": "N4",
-      "prompt": "사람으로 구성된 매장 근무조의 다음 달 교대표 관리 원칙을 설명해줘.",
+      "prompt": "LLM 컨텍스트 윈도우가 뭔지 설명해줘.",
       "should_trigger": false,
-      "reason": "Human workforce management is not agent orchestration."
+      "reason": "Answer-only concept request."
+    },
+    {
+      "id": "N5",
+      "prompt": "사람 개발팀의 중간관리자 평가표를 만들어줘.",
+      "should_trigger": false,
+      "reason": "Human workforce management."
+    },
+    {
+      "id": "N6",
+      "prompt": "이 대화가 길어졌으니 지금까지 내용을 간단히 요약해줘.",
+      "should_trigger": false,
+      "reason": "Single-chat summarization without a persistent organization."
+    },
+    {
+      "id": "N7",
+      "prompt": "A2A 프로토콜의 HTTP 메시지 형식을 설명해줘.",
+      "should_trigger": false,
+      "reason": "Technical explanation sharing A2A vocabulary."
+    },
+    {
+      "id": "N8",
+      "prompt": "이번 PR만 두 에이전트가 리뷰하게 하고 결과를 합쳐줘.",
+      "should_trigger": false,
+      "reason": "Bounded ephemeral review without stable sessions or succession."
+    },
+    {
+      "id": "N9",
+      "prompt": "게임 프로젝트 관리 앱의 세션 타임아웃 버그를 고쳐줘.",
+      "should_trigger": false,
+      "reason": "Keyword overlap with software session management, but the task is an ordinary bug fix."
+    },
+    {
+      "id": "N10",
+      "prompt": "Claude의 compact 명령이 내부적으로 정확히 어떻게 동작하는지 알려줘.",
+      "should_trigger": false,
+      "reason": "Product behavior question, not a request to manage a persistent project."
     }
   ]
 }
