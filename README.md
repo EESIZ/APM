@@ -42,7 +42,7 @@ The full lineage is in [Experimental Lineage and Falsified Designs](references/e
 
 ## The Working Design Target
 
-The redesign comes from the live workflow used to build **FiveGround**: one persistent director session coordinates four persistent worker sessions through session-to-session A2A communication in Claude Code.
+The redesign comes from the live workflow used to build my webgame project: one persistent director session coordinates four persistent worker sessions through session-to-session A2A communication in Claude Code.
 
 That organization has been more comfortable and faster than one long session for continuing development, especially at preserving the original architecture and project rules. Related work returns to workers that already understand the domain. Workers write checkpoints before `compact`. The director is periodically replaced through a handoff so its own context does not become the next bottleneck.
 
