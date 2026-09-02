@@ -39,11 +39,11 @@ if (!descriptionLines.length || descriptionLines.some((line) => line && !/^\s{2,
 
 const description = descriptionLines.map((line) => line.trim()).join(" ");
 const requiredDescriptionText = [
-  "worker agents",
-  "split one deliverable",
-  "report back",
-  "Task or team tools",
-  "without naming APM"
+  "every tool-using execution task",
+  "TaskCreate",
+  "never mentions delegation",
+  "must not perform leaf work",
+  "worker-agent mechanism"
 ];
 for (const text of requiredDescriptionText) {
   if (!description.includes(text)) fail(`description is missing trigger language: ${text}`);
@@ -52,8 +52,9 @@ for (const text of requiredDescriptionText) {
 const requiredHookText = [
   "hooks:",
   "PreToolUse:",
-  "matcher: \"Agent|Task\"",
+  "matcher: \"^(Agent|Task)$\"",
   "manager-hook.mjs\" pre-agent",
+  "manager-hook.mjs\" pre-manager-tool",
   "SubagentStop:",
   "manager-hook.mjs\" subagent-stop",
   "Stop:",
@@ -64,7 +65,8 @@ for (const text of requiredHookText) {
 }
 
 const requiredSkillText = [
-  "## Choose Architecture First",
+  "## The Manager Is An Overseer",
+  "## Manager Context Constitution",
   "## Activation And Execution Rule",
   "## The Manager Must Be Unlazy",
   ".apm/runtime.jsonl",
@@ -74,12 +76,14 @@ const requiredSkillText = [
   "## Worker Dispatch Envelope",
   "## Worker Return Protocol",
   "APM WORK REPORT",
+  "## Independent Verification Envelope",
+  "APM VERIFY REPORT",
   "Return the worker to the account",
   "visible correction ladder",
   "no final completion while a required unit remains",
   "## Pair With unlazy",
   "## Failure Modes",
-  "architecture choice"
+  "must not inspect full source trees"
 ];
 
 for (const text of requiredSkillText) {
@@ -93,9 +97,13 @@ for (const state of states) {
   if (!whips.includes(state)) fail(`WHIPS.md is missing state ${state}`);
 }
 
-const fields = ["HANDLER:", "NEEDS:", "OWNS:", "INPUTS:", "OUTPUT:", "NORM:", "BUDGET:", "WATCH:", "INSPECTION:", "PROOF:", "DISPATCH:", "REPORT:", "ACCOUNT:", "STATE:", "EVIDENCE:"];
+const fields = ["HANDLER:", "VERIFIER:", "NEEDS:", "OWNS:", "INPUTS:", "CONTEXT LIMIT:", "RETURN LIMIT:", "REPLACE WHEN:", "OUTPUT:", "NORM:", "BUDGET:", "WATCH:", "INSPECTION:", "PROOF:", "VERIFY INPUTS:", "DISPATCH:", "REPORT:", "ACCOUNT:", "VERIFY DISPATCH:", "VERIFY REPORT:", "STATE:", "EVIDENCE:"];
 for (const field of fields) {
   if (!template.includes(field)) fail(`WHIPS template is missing ${field}`);
+}
+
+for (const field of ["MISSION:", "NON-NEGOTIABLES:", "SYSTEM MAP:", "DECISIONS:", "CONTEXT POLICY:"]) {
+  if (!template.includes(field)) fail(`WHIPS template is missing header ${field}`);
 }
 
 const markdownFiles = [

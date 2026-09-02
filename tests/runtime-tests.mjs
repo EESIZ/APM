@@ -40,47 +40,76 @@ function run(file, args, { cwd, input = "", env = {} } = {}) {
   return { code: result.status, out: result.stdout || "", err: result.stderr || "" };
 }
 
-function ledger({ unit = "READY", rootState = "WAITING", malformed = false } = {}) {
+function ledger({ unit = "READY", rootState = "WAITING", malformed = false, verifyDispatched = false, verifyReported = false } = {}) {
   const unitDone = unit === "VERIFIED";
   const rootDone = rootState === "VERIFIED";
   const dispatch = ["IN-FLIGHT", "VERIFYING", "VERIFIED"].includes(unit) ? "agent-1 at 2026-09-01T00:00:00Z" : "pending";
   const report = ["VERIFYING", "VERIFIED"].includes(unit) ? "agent-1 APM WORK REPORT" : "pending";
   const account = ["VERIFYING", "VERIFIED"].includes(unit) ? "norm met; budget 4 minutes; no deviation" : "pending";
-  const evidence = unitDone ? "npm test exit=0 output=PASS" : unit === "REWHIP" ? "missing proof on first return" : "pending";
-  const rootEvidence = rootDone ? "root test exit=0 output=ROOT_PASS" : "pending";
+  const verifyDispatch = unitDone || verifyDispatched ? "agent-2 at 2026-09-01T00:05:00Z" : "pending";
+  const verifyReport = unitDone || verifyReported ? "agent-2 APM VERIFY REPORT PASS" : "pending";
+  const evidence = unitDone ? "PASS npm test exit=0 output=PASS" : unit === "REWHIP" ? "missing proof on first return" : "pending";
+  const rootEvidence = rootDone ? "PASS root test exit=0 output=ROOT_PASS" : "pending";
   const rootNeeds = malformed ? "MISSING" : "W1";
   return `# WHIPS: runtime-test
 
-OBJECTIVE: finish one feature
+MISSION: finish one feature
+NON-NEGOTIABLES: preserve public interfaces
+SYSTEM MAP: W1 produces the feature and ROOT integrates it
+DECISIONS: use the existing module boundary
 MANAGER: orchestrator
-INTEGRATION: apply W1 and run root test
-STOP: ROOT is VERIFIED
-ENFORCEMENT: no downstream dispatch or integration before manager verification
+CONTEXT POLICY: manager retains only mission, map, decisions, state, budgets, and bounded reports
+STOP: ROOT is VERIFIED or ABANDONED with evidence
+ENFORCEMENT: manager performs no leaf work and every producer has a different verifier
 AUDIT CADENCE: after every return and before every dependent dispatch
 
 - [${unitDone ? "x" : " "}] W1: implement feature
   HANDLER: worker-1
+  VERIFIER: verifier-1
   NEEDS: none
   OWNS: src/a.js
   INPUTS: accepted plan v1
+  CONTEXT LIMIT: 8000 tokens and 12 tool calls
+  RETURN LIMIT: 4000 chars
+  REPLACE WHEN: compaction, repeated loop, or context limit
   OUTPUT: patch src/a.js
   NORM: one passing feature
   BUDGET: 10 minutes
   WATCH: wait 30 seconds, then recontact
   INSPECTION: inspect src/a.js diff
   PROOF: npm test => PASS
+  VERIFY INPUTS: src/a.js patch and accepted plan v1
   DISPATCH: ${dispatch}
   REPORT: ${report}
   ACCOUNT: ${account}
+  VERIFY DISPATCH: ${verifyDispatch}
+  VERIFY REPORT: ${verifyReport}
   STATE: ${unit}
   EVIDENCE: ${evidence}
 
 ## Integration
 
 - [${rootDone ? "x" : " "}] ROOT: integrated feature
+  HANDLER: root-integrator
+  VERIFIER: root-verifier
   NEEDS: ${rootNeeds}
+  OWNS: src/a.js
+  INPUTS: verified W1 patch
+  CONTEXT LIMIT: 8000 tokens and 12 tool calls
+  RETURN LIMIT: 4000 chars
+  REPLACE WHEN: compaction, repeated loop, or context limit
+  OUTPUT: integrated src/a.js
+  NORM: integrated feature with no regression
+  BUDGET: 10 minutes
+  WATCH: wait 30 seconds, then recontact
   INSPECTION: inspect interfaces and regressions
   PROOF: npm run test:root => ROOT_PASS
+  VERIFY INPUTS: integrated src/a.js and root requirements
+  DISPATCH: ${rootDone ? "root-agent at 2026-09-01T00:10:00Z" : "pending"}
+  REPORT: ${rootDone ? "root-agent APM WORK REPORT" : "pending"}
+  ACCOUNT: ${rootDone ? "root norm met within budget" : "pending"}
+  VERIFY DISPATCH: ${rootDone ? "root-verifier at 2026-09-01T00:15:00Z" : "pending"}
+  VERIFY REPORT: ${rootDone ? "root-verifier APM VERIFY REPORT PASS" : "pending"}
   STATE: ${rootState}
   EVIDENCE: ${rootEvidence}
 `;
@@ -93,9 +122,12 @@ WORK UNIT: implement feature`;
   return `APM WORK ORDER: W1
 USER OBJECTIVE: finish one feature
 WORK UNIT: implement feature
-HANDLER ROLE: implementation worker
+HANDLER ROLE: worker-1
 NEEDS: none
 CONTEXT: accepted plan v1
+CONTEXT LIMIT: 8000 tokens and 12 tool calls
+RETURN LIMIT: 4000 chars
+REPLACE WHEN: compaction, repeated loop, or context limit
 OWNS: src/a.js
 DO NOT: change public interfaces
 METHOD: implement the bounded feature and test it
@@ -117,6 +149,7 @@ UNFINISHED: required work not completed, or none
 PROOF: command and exit code, source evidence, or observable check
 CHANGES: files, interfaces, and decisions changed
 ACCOUNT: norm achieved, budget used, and deviations
+CONTEXT ACCOUNT: context supplied, tool calls used, compaction or limit status
 ASSUMPTIONS: remaining assumptions or none
 RISKS: residual risks or none
 MANAGER DECISION: specific decision needed or none`;
@@ -132,9 +165,46 @@ UNFINISHED: none
 PROOF: npm test exit=0 output=PASS
 CHANGES: src/a.js
 ACCOUNT: norm met; budget 4 minutes; no deviations
+CONTEXT ACCOUNT: 1200 input tokens; 4 tool calls; no compaction; within limit
 ASSUMPTIONS: none
 RISKS: none
 MANAGER DECISION: none`;
+}
+
+function verifyOrder() {
+  return `APM VERIFY ORDER: W1
+USER OBJECTIVE: finish one feature
+VERIFY UNIT: implement feature
+VERIFIER ROLE: verifier-1
+CONTEXT: src/a.js patch and accepted plan v1
+ARTIFACTS: patch src/a.js
+INSPECTION: inspect src/a.js diff
+PROOF: npm test => PASS
+CONTEXT LIMIT: 8000 tokens and 12 tool calls
+RETURN LIMIT: 4000 chars
+STOP WHEN: decisive checks finish or a blocker is evidenced
+Return exactly one report using this schema:
+APM VERIFY REPORT
+UNIT: W1
+VERDICT: PASS | FAIL | BLOCKED
+CHECKS: checks actually performed
+PROOF: decisive evidence
+GAPS: missing or failed requirements, or none
+CONTEXT ACCOUNT: context supplied, tool calls used, compaction or limit status
+RISKS: residual risks or none
+MANAGER DECISION: specific correction or acceptance decision needed`;
+}
+
+function verifyReport() {
+  return `APM VERIFY REPORT
+UNIT: W1
+VERDICT: PASS
+CHECKS: inspected src/a.js and ran npm test
+PROOF: npm test exit=0 output=PASS
+GAPS: none
+CONTEXT ACCOUNT: 900 input tokens; 3 tool calls; no compaction; within limit
+RISKS: none
+MANAGER DECISION: accept W1`;
 }
 
 const tests = [];
@@ -181,6 +251,33 @@ test("PreToolUse allows a ledger-backed full work order", () => {
   } finally { s.cleanup(); }
 });
 
+test("PreToolUse allows a ledger-backed independent verifier order", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger({ unit: "VERIFYING" }));
+    const result = run(hook, ["pre-agent"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_input: { prompt: verifyOrder() } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(result.out).hookSpecificOutput;
+    assert(!output.permissionDecision && output.additionalContext.includes("independent verification"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("PreToolUse blocks verifier dispatch before a producer return", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger());
+    const result = run(hook, ["pre-agent"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_input: { prompt: verifyOrder() } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(json(result.out).hookSpecificOutput.permissionDecision === "deny", result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
 test("SubagentStop sends a worker back for a malformed report", () => {
   const s = sandbox();
   try {
@@ -204,6 +301,166 @@ test("SubagentStop accepts an accountable return", () => {
       env: { APM_HOOK_STATE_DIR: s.state },
     });
     assert(result.code === 0 && result.out === "", result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("SubagentStop accepts an accountable independent verifier return", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger({ unit: "VERIFYING", verifyDispatched: true }));
+    const result = run(hook, ["subagent-stop"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, last_assistant_message: verifyReport() }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(result.code === 0 && result.out === "", result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("SubagentStop enforces the bounded return size", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger());
+    const oversized = report().replace("RISKS: none", `RISKS: ${"x".repeat(4100)}`);
+    const result = run(hook, ["subagent-stop"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, last_assistant_message: oversized }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(json(result.out).decision === "block" && json(result.out).reason.includes("RETURN LIMIT"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("Context firewall blocks manager reads of leaf artifacts", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger());
+    const result = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "Read", tool_input: { file_path: "src/a.js" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(result.out).hookSpecificOutput;
+    assert(output.permissionDecision === "deny" && output.permissionDecisionReason.includes("context firewall"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("Persistent context firewall bootstraps APM before the first direct tool call", () => {
+  const s = sandbox();
+  try {
+    const result = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "Read", tool_input: { file_path: "src/a.js" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(result.out).hookSpecificOutput;
+    assert(output.permissionDecision === "deny" && output.permissionDecisionReason.includes("Load a2a-manager-agent-orchestration"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("Context firewall allows manager updates to WHIPS.md", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger());
+    const result = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "Edit", tool_input: { file_path: "WHIPS.md" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(result.code === 0 && result.out === "", result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("Context firewall allows leaf tools inside dispatched workers", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger({ unit: "IN-FLIGHT" }));
+    const result = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, agent_id: "worker-agent", agent_type: "general-purpose", tool_name: "Read", tool_input: { file_path: "src/a.js" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(result.code === 0 && result.out === "", result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("Reporting hierarchy blocks workers from creating child agents", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger({ unit: "IN-FLIGHT" }));
+    const result = run(hook, ["pre-agent"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, agent_id: "worker-agent", agent_type: "general-purpose", tool_input: { prompt: workOrder() } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(result.out).hookSpecificOutput;
+    assert(output.permissionDecision === "deny" && output.permissionDecisionReason.includes("reporting hierarchy"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("Context firewall blocks TaskCreate as a substitute ledger", () => {
+  const s = sandbox();
+  try {
+    const result = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "TaskCreate", tool_input: { subject: "implement directly" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(result.out).hookSpecificOutput;
+    assert(output.permissionDecision === "deny" && output.permissionDecisionReason.includes("WHIPS.md"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("Context firewall allows a ledger-backed TaskCreate contract", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger());
+    const result = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "TaskCreate", tool_input: { subject: "W1", description: workOrder() } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(result.code === 0 && result.out === "", result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("Task-list mirrors require and accept an active WHIPS ledger", () => {
+  const s = sandbox();
+  try {
+    const denied = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "TaskList", tool_input: {} }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(json(denied.out).hookSpecificOutput.permissionDecision === "deny", denied.out + denied.err);
+
+    s.write("WHIPS.md", ledger());
+    const allowed = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "TaskUpdate", tool_input: { taskId: "1", status: "in_progress" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(allowed.code === 0 && allowed.out === "", allowed.out + allowed.err);
+  } finally { s.cleanup(); }
+});
+
+test("Context firewall allows only bounded APM control commands", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger());
+    const allowed = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "Bash", tool_input: { command: "node scripts/whips-check.mjs --status" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(allowed.code === 0 && allowed.out === "", allowed.out + allowed.err);
+
+    const denied = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "Bash", tool_input: { command: "node scripts/whips-check.mjs --status; Get-Content src/a.js" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(json(denied.out).hookSpecificOutput.permissionDecision === "deny", denied.out + denied.err);
   } finally { s.cleanup(); }
 });
 
@@ -347,7 +604,8 @@ test("installer is idempotent and uninstall preserves sibling hooks", () => {
     for (const event of ["PreToolUse", "SubagentStop", "Stop"]) {
       const ours = installed.hooks[event].flatMap((group) => group.hooks)
         .filter((item) => item.command?.includes("--apm-runtime"));
-      assert(ours.length === 1, `${event} has ${ours.length} APM hooks`);
+      const expected = event === "PreToolUse" ? 2 : 1;
+      assert(ours.length === expected, `${event} has ${ours.length} APM hooks`);
     }
     const removed = run(installer, ["--uninstall"], { cwd: s.dir });
     assert(removed.code === 0, removed.out + removed.err);

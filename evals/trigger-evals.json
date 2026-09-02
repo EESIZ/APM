@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "skill_name": "a2a-manager-agent-orchestration",
-  "purpose": "Evaluate whether the skill description triggers on practical delegation language without over-triggering on unrelated uses of owner, worker, or parallel.",
+  "purpose": "Evaluate whether a lead agent loads APM for ordinary tool-using execution before any delegation language appears, while excluding answer-only requests and non-agent management.",
   "evals": [
     {
       "id": "T1",
       "prompt": "기능 6개를 책임자 여섯 명에게 나눠서 동시에 끝내고 결과를 하나로 합쳐줘.",
       "should_trigger": true,
-      "reason": "Implicit multi-worker assignment and integration."
+      "reason": "Explicit multi-worker assignment and integration."
     },
     {
       "id": "T2",
@@ -25,7 +25,7 @@
       "id": "T4",
       "prompt": "각 작업에 오너를 붙여 병렬로 진행 중인데 결과가 충돌한다. 누가 다시 해야 하는지 정해줘.",
       "should_trigger": true,
-      "reason": "Existing multi-agent ownership conflict and corrective management."
+      "reason": "Existing ownership conflict and corrective management."
     },
     {
       "id": "T5",
@@ -37,31 +37,49 @@
       "id": "T6",
       "prompt": "이 작업을 한 명이 할지 여러 에이전트에게 쪼갤지 판단하고 실제로 수행해.",
       "should_trigger": true,
-      "reason": "Architecture decision may lead directly to delegation."
+      "reason": "A lead execution request must load APM before any architecture judgment."
+    },
+    {
+      "id": "T7",
+      "prompt": "README에 있는 오타 하나를 찾아서 바로 고쳐줘.",
+      "should_trigger": true,
+      "reason": "Even apparently small artifact work must not collapse the manager into a worker."
+    },
+    {
+      "id": "T8",
+      "prompt": "GitHub CODEOWNERS 파일에서 src/api 경로의 오너를 backend-team으로 바꾸고 검증해줘.",
+      "should_trigger": true,
+      "reason": "Ordinary repository modification must trigger without delegation vocabulary."
+    },
+    {
+      "id": "T9",
+      "prompt": "tiktoken 프로젝트에 서로 충돌할 수 있는 기능 두 개를 구현하고 테스트까지 통과시켜줘.",
+      "should_trigger": true,
+      "reason": "Regression for the reported Haiku pilot where the listed skill never loaded and integration lost one feature."
     },
     {
       "id": "N1",
-      "prompt": "README에 있는 오타 하나를 찾아서 바로 고쳐줘.",
+      "prompt": "브라우저 Web Worker가 무엇인지 두 문장으로 설명해줘.",
       "should_trigger": false,
-      "reason": "Small coherent task with no delegation language."
+      "reason": "Answer-only conceptual conversation requires no tool execution."
     },
     {
       "id": "N2",
-      "prompt": "GitHub CODEOWNERS 파일에서 src/api 경로의 오너를 backend-team으로 바꿔줘.",
+      "prompt": "이 영어 문장을 한국어로 번역해줘: The owner reviews the worker thread.",
       "should_trigger": false,
-      "reason": "Owner refers to repository metadata, not agent delegation."
+      "reason": "Translation contains routing keywords but is answer-only."
     },
     {
       "id": "N3",
-      "prompt": "브라우저 Web Worker에서 병렬 계산이 느린 원인을 분석해줘.",
+      "prompt": "아직 실행하거나 파일을 바꾸지는 말고 가능한 리팩터링 방향만 같이 브레인스토밍하자.",
       "should_trigger": false,
-      "reason": "Worker and parallel refer to a browser runtime, not delegated agents."
+      "reason": "The user explicitly requests discussion rather than execution."
     },
     {
       "id": "N4",
-      "prompt": "이 함수의 책임을 두 모듈로 분리하는 리팩터링을 해줘.",
+      "prompt": "사람으로 구성된 매장 근무조의 다음 달 교대표 관리 원칙을 설명해줘.",
       "should_trigger": false,
-      "reason": "Responsibility splitting describes code structure, not multiple agents."
+      "reason": "Human workforce management is not agent orchestration."
     }
   ]
 }

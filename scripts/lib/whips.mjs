@@ -6,21 +6,38 @@ export const STATES = new Set([
   "REWHIP", "DISCARDED", "ABANDONED",
 ]);
 
+export const HEADER_FIELDS = [
+  "MISSION", "NON-NEGOTIABLES", "SYSTEM MAP", "DECISIONS",
+  "MANAGER", "CONTEXT POLICY", "STOP", "ENFORCEMENT",
+];
+
 export const WORK_FIELDS = [
-  "HANDLER", "NEEDS", "OWNS", "INPUTS", "OUTPUT", "NORM", "BUDGET",
-  "WATCH", "INSPECTION", "PROOF", "DISPATCH", "REPORT", "ACCOUNT",
-  "STATE", "EVIDENCE",
+  "HANDLER", "VERIFIER", "NEEDS", "OWNS", "INPUTS", "CONTEXT LIMIT",
+  "RETURN LIMIT", "REPLACE WHEN", "OUTPUT", "NORM", "BUDGET", "WATCH",
+  "INSPECTION", "PROOF", "VERIFY INPUTS", "DISPATCH", "REPORT", "ACCOUNT",
+  "VERIFY DISPATCH", "VERIFY REPORT", "STATE", "EVIDENCE",
 ];
 
 export const REPORT_FIELDS = [
   "UNIT", "STATUS", "OUTPUTS", "UNFINISHED", "PROOF", "CHANGES",
-  "ACCOUNT", "ASSUMPTIONS", "RISKS", "MANAGER DECISION",
+  "ACCOUNT", "CONTEXT ACCOUNT", "ASSUMPTIONS", "RISKS", "MANAGER DECISION",
 ];
 
 export const ORDER_FIELDS = [
   "USER OBJECTIVE", "WORK UNIT", "HANDLER ROLE", "NEEDS", "CONTEXT",
-  "OWNS", "DO NOT", "METHOD", "OUTPUT", "INSPECTION", "PROOF", "NORM",
-  "BUDGET", "WATCH", "REPORT WHEN", "ESCALATE IF", "STOP WHEN",
+  "CONTEXT LIMIT", "RETURN LIMIT", "REPLACE WHEN", "OWNS", "DO NOT",
+  "METHOD", "OUTPUT", "INSPECTION", "PROOF", "NORM", "BUDGET", "WATCH",
+  "REPORT WHEN", "ESCALATE IF", "STOP WHEN",
+];
+
+export const VERIFY_ORDER_FIELDS = [
+  "USER OBJECTIVE", "VERIFY UNIT", "VERIFIER ROLE", "CONTEXT", "ARTIFACTS",
+  "INSPECTION", "PROOF", "CONTEXT LIMIT", "RETURN LIMIT", "STOP WHEN",
+];
+
+export const VERIFY_REPORT_FIELDS = [
+  "UNIT", "VERDICT", "CHECKS", "PROOF", "GAPS", "CONTEXT ACCOUNT",
+  "RISKS", "MANAGER DECISION",
 ];
 
 const ORDER_ALIASES = new Map([
@@ -30,6 +47,9 @@ const ORDER_ALIASES = new Map([
   ["NEEDS", "NEEDS"],
   ["CONTEXT", "CONTEXT"],
   ["CONTEXT AND ACCEPTED DECISIONS", "CONTEXT"],
+  ["CONTEXT LIMIT", "CONTEXT LIMIT"],
+  ["RETURN LIMIT", "RETURN LIMIT"],
+  ["REPLACE WHEN", "REPLACE WHEN"],
   ["SCOPE / OWNS", "OWNS"],
   ["OWNS", "OWNS"],
   ["DO NOT", "DO NOT"],
@@ -47,8 +67,8 @@ const ORDER_ALIASES = new Map([
   ["STOP WHEN", "STOP WHEN"],
 ]);
 
-const ROOT_FIELDS = ["NEEDS", "INSPECTION", "PROOF", "STATE", "EVIDENCE"];
-const ORDER_NONE_ALLOWED = new Set(["NEEDS", "CONTEXT", "DO NOT", "ESCALATE IF"]);
+const VERIFY_ORDER_ALIASES = new Map(VERIFY_ORDER_FIELDS.map((field) => [field, field]));
+const ORDER_NONE_ALLOWED = new Set(["NEEDS", "DO NOT", "ESCALATE IF"]);
 
 function visibleLines(text) {
   const output = [];
@@ -103,11 +123,12 @@ export function parseWhips(text) {
   const lines = visibleLines(text);
   const header = lines.map((line) => line.match(/^# WHIPS:\s*(.+?)\s*$/)).find(Boolean);
   if (!header || /<[^>]+>/.test(header[1])) {
-    return { active: false, scope: null, units: [], errors: [], text: String(text) };
+    return { active: false, scope: null, header: {}, units: [], errors: [], text: String(text) };
   }
 
   const units = [];
   const errors = [];
+  const headerFields = {};
   let current = null;
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index];
@@ -123,7 +144,14 @@ export function parseWhips(text) {
       units.push(current);
       continue;
     }
-    if (!current) continue;
+    if (!current) {
+      const field = line.match(/^([A-Z][A-Z0-9 _-]*):\s*(.*?)\s*$/);
+      if (field) {
+        if (Object.hasOwn(headerFields, field[1])) errors.push(`header repeats ${field[1]}`);
+        else headerFields[field[1]] = field[2];
+      }
+      continue;
+    }
     const field = line.match(/^\s{2}([A-Z][A-Z0-9 _-]*):\s*(.*?)\s*$/);
     if (field) {
       if (Object.hasOwn(current.fields, field[1])) errors.push(`${current.id} repeats ${field[1]}`);
@@ -147,9 +175,12 @@ export function parseWhips(text) {
   if (roots.length !== 1) errors.push(`active ledger requires exactly one ROOT unit, found ${roots.length}`);
   const root = roots[0] ?? null;
 
+  for (const field of HEADER_FIELDS) {
+    if (!Object.hasOwn(headerFields, field) || isPending(headerFields[field])) errors.push(`header is missing ${field}`);
+  }
+
   for (const unit of units) {
-    const required = unit === root ? ROOT_FIELDS : WORK_FIELDS;
-    for (const field of required) {
+    for (const field of WORK_FIELDS) {
       if (!Object.hasOwn(unit.fields, field)) errors.push(`${unit.id} is missing ${field}`);
     }
     for (const dependency of unit.needs) {
@@ -159,11 +190,15 @@ export function parseWhips(text) {
   }
   findCycles(units, errors);
 
-  return { active: true, scope: header[1].trim(), units, root, errors, text: String(text) };
+  return { active: true, scope: header[1].trim(), header: headerFields, units, root, errors, text: String(text) };
 }
 
 function readyFields(unit) {
-  return ["HANDLER", "OWNS", "INPUTS", "OUTPUT", "NORM", "BUDGET", "WATCH", "INSPECTION", "PROOF"]
+  return [
+    "HANDLER", "VERIFIER", "OWNS", "INPUTS", "CONTEXT LIMIT", "RETURN LIMIT",
+    "REPLACE WHEN", "OUTPUT", "NORM", "BUDGET", "WATCH", "INSPECTION", "PROOF",
+    "VERIFY INPUTS",
+  ]
     .filter((field) => isPending(unit.fields[field]) || (field !== "INPUTS" && /^none$/i.test(String(unit.fields[field]).trim())));
 }
 
@@ -184,29 +219,14 @@ export function evaluateWhips(document) {
 
   for (const unit of document.units) {
     counts[unit.state] = (counts[unit.state] ?? 0) + 1;
-    const root = unit === document.root;
     const depsReady = dependenciesVerified(unit);
 
-    if (root) {
-      if (unit.state === "WAITING") {
-        duties.push(depsReady
-          ? `M-INTEGRATE ${unit.id}: all dependencies are verified; perform root integration and move to VERIFYING`
-          : `M-WATCH ${unit.id}: root is waiting on ${unit.needs.filter((id) => byId.get(id)?.state !== "VERIFIED").join(", ")}`);
-      } else if (unit.state === "READY") {
-        duties.push(`M-INTEGRATE ${unit.id}: perform root integration and move to VERIFYING`);
-      } else if (unit.state === "VERIFYING") {
-        duties.push(`M-AUDIT ${unit.id}: run root proof and record decisive evidence`);
-      } else if (unit.state === "VERIFIED") {
-        if (!depsReady) errors.push("ROOT is VERIFIED before all dependencies are VERIFIED");
-        evidenceRequired(unit, ["EVIDENCE"], errors);
-        if (!unit.checked) errors.push("ROOT VERIFIED must use a checked box");
-      } else if (unit.state === "ABANDONED") {
-        evidenceRequired(unit, ["EVIDENCE"], errors);
-        if (!unit.checked) errors.push("ROOT ABANDONED must use a checked box");
-      } else {
-        errors.push(`ROOT cannot use state ${unit.state}`);
-      }
-      continue;
+    if (!isPending(unit.fields.HANDLER) && String(unit.fields.HANDLER).trim() === String(unit.fields.VERIFIER).trim()) {
+      errors.push(`${unit.id} HANDLER and VERIFIER must be different agents`);
+    }
+    const returnLimit = String(unit.fields["RETURN LIMIT"] ?? "").trim().match(/^(\d{3,6})\s+chars$/i);
+    if (!isPending(unit.fields["RETURN LIMIT"]) && !returnLimit) {
+      errors.push(`${unit.id} RETURN LIMIT must use '<integer> chars'`);
     }
 
     if (["READY", "IN-FLIGHT", "VERIFYING", "VERIFIED", "REWHIP"].includes(unit.state)) {
@@ -226,9 +246,16 @@ export function evaluateWhips(document) {
       duties.push(`M-WATCH ${unit.id}: execute WATCH=${unit.fields.WATCH || "missing"}; wait, poll, or follow up until a report arrives`);
     } else if (unit.state === "VERIFYING") {
       evidenceRequired(unit, ["DISPATCH", "REPORT", "ACCOUNT"], errors);
-      duties.push(`M-AUDIT ${unit.id}: inspect the returned artifact and reproduce PROOF`);
+      if (isPending(unit.fields["VERIFY DISPATCH"])) {
+        duties.push(`M-VERIFY ${unit.id}: dispatch the independent verifier; do not inspect or reproduce leaf work yourself`);
+      } else if (isPending(unit.fields["VERIFY REPORT"])) {
+        duties.push(`M-WATCH ${unit.id}: collect the independent verifier report`);
+      } else {
+        duties.push(`M-DECIDE ${unit.id}: accept PASS evidence as VERIFIED or issue REWHIP, reassignment, or discard`);
+      }
     } else if (unit.state === "VERIFIED") {
-      evidenceRequired(unit, ["DISPATCH", "REPORT", "ACCOUNT", "EVIDENCE"], errors);
+      evidenceRequired(unit, ["DISPATCH", "REPORT", "ACCOUNT", "VERIFY DISPATCH", "VERIFY REPORT", "EVIDENCE"], errors);
+      if (!/^PASS\b/i.test(String(unit.fields.EVIDENCE).trim())) errors.push(`${unit.id} VERIFIED EVIDENCE must begin with PASS`);
       if (!unit.checked) errors.push(`${unit.id} VERIFIED must use a checked box`);
     } else if (unit.state === "REWHIP") {
       evidenceRequired(unit, ["EVIDENCE"], errors);
@@ -236,6 +263,13 @@ export function evaluateWhips(document) {
     } else if (["DISCARDED", "ABANDONED"].includes(unit.state)) {
       evidenceRequired(unit, ["EVIDENCE"], errors);
       if (!unit.checked) errors.push(`${unit.id} ${unit.state} must use a checked box`);
+    }
+  }
+
+  if (document.root) {
+    if (document.root.state === "DISCARDED") errors.push("ROOT cannot be DISCARDED");
+    if (document.root.state === "VERIFIED" && !dependenciesVerified(document.root)) {
+      errors.push("ROOT is VERIFIED before all dependencies are VERIFIED");
     }
   }
 
@@ -292,6 +326,29 @@ export function parseWorkOrder(message) {
   return { text, unit: first?.[1] ?? null, fields, errors };
 }
 
+export function parseVerifyOrder(message) {
+  const text = String(message ?? "");
+  const lines = text.trim().split(/\r?\n/);
+  const first = lines[0]?.match(/^APM VERIFY ORDER:\s*([A-Za-z][A-Za-z0-9._-]*)\s*$/);
+  const fields = {};
+  const errors = [];
+  if (!first) errors.push("first line must be APM VERIFY ORDER: <unit id>");
+  if (lines.filter((line) => /^APM VERIFY ORDER:/.test(line.trim())).length !== 1) errors.push("expected exactly one APM VERIFY ORDER marker");
+  const reportIndex = lines.findIndex((line) => line.trim() === "APM VERIFY REPORT");
+  for (const line of lines.slice(1, reportIndex === -1 ? lines.length : reportIndex)) {
+    const match = line.match(/^([A-Za-z][A-Za-z /]+):\s*(.*?)\s*$/);
+    if (!match) continue;
+    const field = VERIFY_ORDER_ALIASES.get(match[1].trim().toUpperCase());
+    if (!field) continue;
+    if (Object.hasOwn(fields, field)) errors.push(`duplicate ${field}`);
+    else fields[field] = match[2];
+  }
+  for (const field of VERIFY_ORDER_FIELDS) {
+    if (!Object.hasOwn(fields, field) || isPending(fields[field]) || /^none$/i.test(String(fields[field]).trim())) errors.push(`missing ${field}`);
+  }
+  return { text, unit: first?.[1] ?? null, fields, errors };
+}
+
 export function parseWorkReport(message) {
   const text = String(message ?? "");
   const trimmed = text.trim();
@@ -328,6 +385,7 @@ export function parseWorkReport(message) {
     errors.push("COMPLETE report requires outputs and proof");
   }
   if (/^none$/i.test(String(fields.ACCOUNT ?? "").trim())) errors.push("report requires a norm-versus-actual ACCOUNT");
+  if (/^none$/i.test(String(fields["CONTEXT ACCOUNT"] ?? "").trim())) errors.push("report requires a CONTEXT ACCOUNT");
   if (["BLOCKED", "PARTIAL"].includes(status) && /^none$/i.test(String(fields.UNFINISHED ?? "").trim())) {
     errors.push(`${status} report must identify unfinished work`);
   }
@@ -338,4 +396,32 @@ export function parseWorkReport(message) {
     errors.push(`${status} report requires a manager decision or unblock request`);
   }
   return { text, fields, status, errors };
+}
+
+export function parseVerifyReport(message) {
+  const text = String(message ?? "");
+  const lines = text.trim().split(/\r?\n/);
+  const fields = {};
+  const errors = [];
+  if (lines[0] !== "APM VERIFY REPORT") errors.push("first line must be APM VERIFY REPORT");
+  if (lines.filter((line) => line.trim() === "APM VERIFY REPORT").length !== 1) errors.push("expected exactly one APM VERIFY REPORT marker");
+  for (const line of lines.slice(1)) {
+    if (!line.trim()) continue;
+    const match = line.match(/^([A-Z][A-Z ]+):\s*(.*?)\s*$/);
+    if (!match) { errors.push(`unexpected verify report line ${JSON.stringify(line.slice(0, 80))}`); continue; }
+    if (!VERIFY_REPORT_FIELDS.includes(match[1])) { errors.push(`unknown verify report field ${match[1]}`); continue; }
+    if (Object.hasOwn(fields, match[1])) errors.push(`duplicate ${match[1]}`);
+    else fields[match[1]] = match[2];
+  }
+  for (const field of VERIFY_REPORT_FIELDS) {
+    if (!Object.hasOwn(fields, field) || isPending(fields[field])) errors.push(`missing ${field}`);
+  }
+  const verdict = String(fields.VERDICT ?? "").toUpperCase();
+  if (!new Set(["PASS", "FAIL", "BLOCKED"]).has(verdict)) errors.push("VERDICT must be PASS, FAIL, or BLOCKED");
+  if (verdict === "PASS" && /^none$/i.test(String(fields.PROOF ?? "").trim())) errors.push("PASS requires proof");
+  if (verdict === "PASS" && !/^none$/i.test(String(fields.GAPS ?? "").trim())) errors.push("PASS requires GAPS: none");
+  if (["FAIL", "BLOCKED"].includes(verdict) && /^none$/i.test(String(fields.GAPS ?? "").trim())) errors.push(`${verdict} requires gaps`);
+  if (["FAIL", "BLOCKED"].includes(verdict) && /^none$/i.test(String(fields["MANAGER DECISION"] ?? "").trim())) errors.push(`${verdict} requires a manager decision`);
+  if (/^none$/i.test(String(fields["CONTEXT ACCOUNT"] ?? "").trim())) errors.push("verify report requires a CONTEXT ACCOUNT");
+  return { text, fields, verdict, errors };
 }

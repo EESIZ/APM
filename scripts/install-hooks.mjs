@@ -109,8 +109,11 @@ if (uninstall && removed === 0) {
 
 if (!uninstall) {
   hooks.PreToolUse = [...(hooks.PreToolUse || []), {
-    matcher: "Agent|Task",
+    matcher: "^(Agent|Task)$",
     hooks: [{ type: "command", command: command("pre-agent"), timeout: 10 }],
+  }, {
+    matcher: "^(Bash|Shell|Read|Write|Edit|MultiEdit|NotebookEdit|Glob|Grep|WebFetch|WebSearch|TaskCreate|TaskGet|TaskUpdate|TaskList|TodoWrite|TeamCreate|TeamDelete)$",
+    hooks: [{ type: "command", command: command("pre-manager-tool"), timeout: 10 }],
   }];
   hooks.SubagentStop = [...(hooks.SubagentStop || []), {
     hooks: [{ type: "command", command: command("subagent-stop"), timeout: 10 }],
@@ -155,6 +158,7 @@ if (uninstall) {
 } else {
   console.log(`Installed APM manager-runtime hooks into ${target}\n` +
     "  PreToolUse: blocks uncontracted Agent dispatch\n" +
+    "  PreToolUse: blocks manager leaf work and non-WHIPS task ledgers\n" +
     "  SubagentStop: returns malformed worker reports\n" +
     "  Stop: keeps the manager working while WHIPS duties remain\n" +
     `  stop gate: ${allowEmergencyRelease ? "six-block emergency release enabled" : "strict"}\n` +

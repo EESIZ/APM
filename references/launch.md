@@ -10,7 +10,7 @@ Primary line:
 
 Supporting claim:
 
-> The multi-agent pattern that survived the backlash is a manager with bounded, isolated subagents. That manager still needs contracts, evidence, correction, and integration discipline.
+> The multi-agent pattern that survived the backlash is a manager with bounded, isolated subagents. That manager still needs contracts, context budgets, independent evidence, correction, and integration supervision.
 
 Do not lead with lower token prices or claim that multi-agent systems are inherently better. Lead with the failure modes documented by equal-budget reasoning research, Stanford CooperBench, Anthropic, and Cognition.
 

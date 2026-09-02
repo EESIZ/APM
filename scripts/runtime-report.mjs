@@ -60,21 +60,28 @@ const summary = {
   actions: countBy("action"),
   codes: countBy("code"),
   accepted_dispatches: events.filter((event) => event.code === "DISPATCH_CONTRACT_OK").length,
-  denied_dispatches: events.filter((event) => event.action === "deny").length,
+  accepted_verifications: events.filter((event) => event.code === "VERIFY_CONTRACT_OK").length,
+  denied_dispatches: events.filter((event) => event.action === "deny" && event.code !== "MANAGER_LEAF_TOOL_BLOCKED").length,
+  manager_leaf_blocks: events.filter((event) => event.code === "MANAGER_LEAF_TOOL_BLOCKED").length,
   returned_workers: events.filter((event) => event.code === "WORK_REPORT_OK").length,
+  returned_verifiers: events.filter((event) => event.code === "VERIFY_REPORT_OK").length,
   corrected_worker_returns: events.filter((event) => event.code === "MALFORMED_WORK_REPORT").length,
+  corrected_verifier_returns: events.filter((event) => event.code === "MALFORMED_VERIFY_REPORT").length,
   manager_stop_blocks: events.filter((event) => event.code === "MANAGER_DUTIES_REMAIN").length,
   verified_completions: events.filter((event) => event.code === "MANAGER_COMPLETE").length,
   emergency_releases: events.filter((event) => event.code === "NO_PROGRESS_GUARD").length,
 };
-summary.manager_interventions = summary.denied_dispatches + summary.corrected_worker_returns + summary.manager_stop_blocks;
+summary.manager_interventions = summary.denied_dispatches + summary.manager_leaf_blocks + summary.corrected_worker_returns + summary.corrected_verifier_returns + summary.manager_stop_blocks;
 
 if (args.includes("--json")) console.log(JSON.stringify(summary, null, 2));
 else {
   console.log(`APM runtime events: ${summary.events}`);
   console.log(`Sessions: ${summary.sessions}`);
   console.log(`Dispatches accepted/denied: ${summary.accepted_dispatches}/${summary.denied_dispatches}`);
+  console.log(`Verification dispatches accepted: ${summary.accepted_verifications}`);
+  console.log(`Manager leaf-tool blocks: ${summary.manager_leaf_blocks}`);
   console.log(`Worker reports accepted/corrected: ${summary.returned_workers}/${summary.corrected_worker_returns}`);
+  console.log(`Verifier reports accepted/corrected: ${summary.returned_verifiers}/${summary.corrected_verifier_returns}`);
   console.log(`Manager stop blocks: ${summary.manager_stop_blocks}`);
   console.log(`Manager interventions: ${summary.manager_interventions}`);
   console.log(`Verified completions: ${summary.verified_completions}`);

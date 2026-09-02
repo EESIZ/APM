@@ -21,7 +21,7 @@ NORM: exact leaf acceptance gates and completion boundary
 BUDGET: agreed time, token, tool, or retry ceiling
 WATCH: manager wait, poll, recontact, or interrupt cadence
 INSPECTION: inspect the artifact and re-run every runnable leaf gate
-PROOF: current unlazy evidence plus manager re-verification
+PROOF: current unlazy evidence plus fresh APM verifier evidence
 REPORT: APM WORK REPORT containing outputs, unfinished work, proof, changes, account, assumptions, risks, and manager decisions
 ```
 

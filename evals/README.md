@@ -16,7 +16,7 @@ Requirements:
 
 - Node.js 18 or newer;
 - an authenticated `claude` CLI;
-- enough account or API budget for 25 model calls with the current twelve-case suite.
+- enough account or API budget for the current fourteen-case suite and blinded judging.
 
 ```bash
 npm run eval
@@ -39,7 +39,7 @@ Environment variables `APM_EVAL_RUNTIME`, `APM_EVAL_MODEL`, `APM_EVAL_JUDGE_MODE
 
 ## Runtime Enforcement Tests
 
-`npm test` also executes `tests/runtime-tests.mjs`. These cases run the actual hook processes with Claude Code-shaped JSON payloads and temporary ledgers. They verify dispatch denial, exact contract binding, worker-return correction, manager Stop blocking across active states, strict default behavior, the optional emergency release, sibling-hook preservation, and runtime-log privacy.
+`npm test` also executes `tests/runtime-tests.mjs`. These cases run the actual hook processes with Claude Code-shaped JSON payloads and temporary ledgers. They verify manager leaf-tool blocking without disabling worker tools, nested-delegation denial, producer and verifier contract binding, bounded returns, manager Stop blocking across active states, strict default behavior, the optional emergency release, sibling-hook preservation, and runtime-log privacy.
 
 During a live APM run, hook decisions append to `.apm/runtime.jsonl`. Aggregate the event stream with `node scripts/runtime-report.mjs --json`. It records activation and control interventions, not prompt text, worker messages, or proof that the produced artifact is correct. Compare these runtime metrics with task quality, elapsed time, tokens, and benchmark outcomes rather than treating intervention count alone as productivity.
 
@@ -57,4 +57,10 @@ Keep this result separate from official harness output. The reproduction inherit
 
 ## Trigger Evaluation Set
 
-[`trigger-evals.json`](trigger-evals.json) separates practical phrases that should load APM from unrelated uses of words such as `owner`, `worker`, `responsibility`, and `parallel`. The positive cases deliberately avoid relying on the skill name. Use this set with a Claude skill-description trigger evaluation after changing the frontmatter description; repository validation checks the fixture shape but does not pretend to simulate Claude's native skill router.
+[`trigger-evals.json`](trigger-evals.json) now treats an ordinary execution request received by a lead with worker tools as positive even when it appears small and contains no delegation language. Answer-only conversation and non-agent management remain negative. Use this set with a native skill-description trigger evaluation after changing the frontmatter; repository validation checks fixture shape but does not pretend to simulate Claude's router.
+
+### Trigger Regression Evidence
+
+An external harness report supplied on 2026-09-02 observed the skill installed and visible but invoked zero times in three settings: Sonnet 4.5 on ProjDevBench, Sonnet on an isolated CooperBench run, and an all-Haiku staged team run. In the Haiku tiktoken pilot, the team scored 1/2; the two patches became identical and the lead failed to preserve the second feature during integration. Reported cost was $0.44 over 13 minutes 43 seconds.
+
+Those observations motivate `T7` through `T9` and `E13`; they are not stored as a controlled result because the raw harness artifacts are not in this repository. The revised claim is narrower: description routing must activate before the lead independently decides whether to delegate, and persistent hooks are required when probabilistic native routing is not strong enough.

@@ -42,5 +42,11 @@ for (const item of triggers.evals) {
 
 if (!triggers.evals.some((item) => item.should_trigger)) fail("trigger suite has no positive cases");
 if (!triggers.evals.some((item) => !item.should_trigger)) fail("trigger suite has no negative cases");
+for (const id of ["T7", "T8", "T9"]) {
+  if (!triggers.evals.some((item) => item.id === id && item.should_trigger)) fail(`trigger suite is missing ordinary-execution regression ${id}`);
+}
+for (const id of ["E13", "E14"]) {
+  if (!suite.evals.some((item) => item.id === id)) fail(`manager suite is missing context-firewall regression ${id}`);
+}
 
 console.log("evaluation fixture validation passed");

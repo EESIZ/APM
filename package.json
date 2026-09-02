@@ -1,6 +1,6 @@
 {
   "name": "apm-agent-skill",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "description": "Validation and evaluation harness for the APM manager-agent skill.",
   "license": "MIT",

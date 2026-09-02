@@ -12,7 +12,7 @@ This ledger separates what the sources demonstrate from APM's inference. It avoi
 
 **Boundary:** The experiments concern multi-hop reasoning under matched thinking-token budgets. They do not establish that every orchestrator-worker application is inferior. The paper is by Tran and Kiela; it is not the Stanford study sometimes conflated with CooperBench.
 
-**APM inference:** Token price declines do not remove context fragmentation or coordination overhead. A manager should default to one agent and demand a concrete reason for delegation.
+**APM inference:** Token price declines do not remove context fragmentation or coordination overhead. Keep coherent leaf work with one producer, but do not merge that producer's growing execution context into the long-lived manager context.
 
 ## Stanford CooperBench
 

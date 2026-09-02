@@ -4,7 +4,7 @@
   "rubric": {
     "scale": "0-4 per dimension",
     "dimensions": {
-      "architecture_restraint": "Chooses one agent when coherent and delegates only when the benefit exceeds coordination cost.",
+      "role_and_context_separation": "Keeps the manager non-executing, externalizes the mission and system map, bounds worker context and returns, and uses different producer, verifier, and integrator roles.",
       "contract_quality": "Defines bounded objectives, scope, ownership, dependencies, outputs, constraints, stop conditions, and a worker return schema embedded in each dispatch.",
       "context_ownership": "Preserves the user's goal and accepted decisions across handoffs and prevents conflicting assumptions.",
       "verification_quality": "Requires reproducible or directly inspectable proof rather than confidence or activity.",
@@ -17,8 +17,8 @@
       "id": "E1",
       "prompt": "A2A 관리자 역할을 맡아줘. README의 오타 하나만 고치면 되는데 에이전트 팀을 어떻게 구성할지 계획해줘.",
       "expected_signals": [
-        "Rejects unnecessary fan-out and recommends one agent",
-        "States a small direct verification step"
+        "Keeps the typo as one coherent work unit but dispatches it outside the manager context",
+        "Uses a different verifier and does not let the manager inspect or edit the README directly"
       ]
     },
     {
@@ -91,8 +91,8 @@
       "prompt": "두 워커가 각각 패치를 반환했다. 관리자가 코드를 보기 좋게 다시 작성해서 합친 뒤 루트 테스트만 돌리면 되는지, 아니면 다른 통합 절차가 필요한지 판단해줘.",
       "expected_signals": [
         "Preserves and applies exact worker artifacts before evaluation",
-        "Treats manager rewrites as new integration changes",
-        "Re-runs worker-level proof and root proof after integration changes",
+        "Forbids manager rewrites and dispatches a dedicated integration worker",
+        "Uses a different root verifier for cross-unit proof",
         "Maintains provenance for accepted output"
       ]
     },
@@ -126,6 +126,26 @@
         "Measures accepted and denied dispatches, corrected worker returns, manager stop blocks, and verified completion",
         "Stores hashes, state, action codes, and unit ids without prompt or worker-message content",
         "Separates enforcement activation evidence from artifact quality and productivity outcomes"
+      ]
+    },
+    {
+      "id": "E13",
+      "prompt": "너는 이 저장소의 리드다. tiktoken에 충돌 가능한 기능 두 개를 구현하고 테스트까지 끝내. 어떤 에이전트를 쓸지는 따로 말하지 않겠다.",
+      "expected_signals": [
+        "Loads APM before TaskCreate, repository inspection, or implementation despite no delegation wording",
+        "Writes the mission, non-negotiables, system map, decisions, and context policy before leaf work",
+        "Keeps the lead non-executing and assigns bounded producer contexts",
+        "Uses independent verification and a dedicated ROOT integrator so one feature cannot silently overwrite the other"
+      ]
+    },
+    {
+      "id": "E14",
+      "prompt": "장기 리팩터링을 관리해. 각 작업자가 원문 코드와 긴 테스트 로그를 다루게 하되 너는 전체 구조와 목표를 끝까지 기억해야 한다. 작업자 컨텍스트가 차거나 반복하기 시작할 때 어떻게 통제할지도 포함해 실제 운영 규칙을 작성해.",
+      "expected_signals": [
+        "Treats manager context as a protected control plane rather than spare execution capacity",
+        "Defines explicit context limits, bounded returns, context accounts, and replacement conditions",
+        "Passes durable artifacts and compact decisions to replacement workers instead of full transcripts",
+        "Delegates verification and integration while retaining manager acceptance authority"
       ]
     }
   ]
