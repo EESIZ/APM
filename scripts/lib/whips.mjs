@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { dirname, resolve } from "node:path";
 
 export const STATES = new Set([
   "WAITING", "READY", "IN-FLIGHT", "VERIFYING", "VERIFIED",
@@ -278,11 +278,26 @@ export function evaluateWhips(document) {
   return { complete: errors.length === 0 && allTerminal && rootTerminal, errors, duties, counts, document };
 }
 
+export function whipsCandidateFiles(root) {
+  const project = resolve(root);
+  const explicit = String(process.env.APM_WHIPS_PATH || "").trim();
+  const candidates = explicit
+    ? [resolve(project, explicit)]
+    : [resolve(project, "WHIPS.md"), resolve(dirname(project), "shared", "WHIPS.md")];
+  return [...new Set(candidates)];
+}
+
 export function loadWhips(root) {
-  const file = resolve(root, "WHIPS.md");
-  if (!existsSync(file)) return { file, exists: false, document: parseWhips("") };
-  const text = readFileSync(file, "utf8");
-  return { file, exists: true, document: parseWhips(text) };
+  const candidates = whipsCandidateFiles(root);
+  const loaded = candidates.filter((file) => existsSync(file)).map((file) => {
+    const text = readFileSync(file, "utf8");
+    return { file, exists: true, document: parseWhips(text) };
+  });
+  const selected = loaded.find((item) => item.document.active && item.document.errors.length === 0)
+    || loaded.find((item) => item.document.active)
+    || loaded[0];
+  if (selected) return { ...selected, candidates };
+  return { file: candidates[0], candidates, exists: false, document: parseWhips("") };
 }
 
 export function formatStatus(result) {
@@ -294,6 +309,80 @@ export function formatStatus(result) {
   if (result.complete) lines.push("Manager gate: COMPLETE");
   else lines.push("Manager gate: BLOCKED");
   return lines.join("\n");
+}
+
+function unitFrom(document, value) {
+  if (typeof value === "object" && value?.id) return value;
+  return document.units.find((unit) => unit.id === value) || null;
+}
+
+export function renderWorkOrder(document, value) {
+  const unit = unitFrom(document, value);
+  if (!unit) throw new Error(`cannot render unknown work unit ${value}`);
+  return [
+    `APM WORK ORDER: ${unit.id}`,
+    `USER OBJECTIVE: ${document.header.MISSION}`,
+    `WORK UNIT: ${unit.title}`,
+    `HANDLER ROLE: ${unit.fields.HANDLER}`,
+    `NEEDS: ${unit.fields.NEEDS}`,
+    `CONTEXT: ${unit.fields.INPUTS}`,
+    `CONTEXT LIMIT: ${unit.fields["CONTEXT LIMIT"]}`,
+    `RETURN LIMIT: ${unit.fields["RETURN LIMIT"]}`,
+    `REPLACE WHEN: ${unit.fields["REPLACE WHEN"]}`,
+    `OWNS: ${unit.fields.OWNS}`,
+    `DO NOT: violate these non-negotiables: ${document.header["NON-NEGOTIABLES"]}; modify outside OWNS; create child agents; self-certify`,
+    "METHOD: execute only this bounded unit, preserve accepted decisions, and collect the recorded proof",
+    `OUTPUT: ${unit.fields.OUTPUT}`,
+    `INSPECTION: ${unit.fields.INSPECTION}`,
+    `PROOF: ${unit.fields.PROOF}`,
+    `NORM: ${unit.fields.NORM}`,
+    `BUDGET: ${unit.fields.BUDGET}`,
+    `WATCH: ${unit.fields.WATCH}`,
+    "REPORT WHEN: complete | blocked | before scope change | at budget threshold",
+    "ESCALATE IF: required input is missing or scope, ownership, context, or budget would be exceeded",
+    "STOP WHEN: OUTPUT and PROOF satisfy NORM, or an evidenced blocker requires a manager decision",
+    "Return exactly one report using this schema:",
+    "APM WORK REPORT",
+    `UNIT: ${unit.id}`,
+    "STATUS: COMPLETE | BLOCKED | PARTIAL",
+    "OUTPUTS: exact paths, patch, commit, findings, or none",
+    "UNFINISHED: required work not completed, or none",
+    "PROOF: command and exit code, source evidence, or observable check",
+    "CHANGES: files, interfaces, and decisions changed",
+    "ACCOUNT: norm achieved, budget used, and deviations",
+    "CONTEXT ACCOUNT: context supplied, tool calls used, compaction or limit status",
+    "ASSUMPTIONS: remaining assumptions or none",
+    "RISKS: residual risks or none",
+    "MANAGER DECISION: specific decision needed or none",
+  ].join("\n");
+}
+
+export function renderVerifyOrder(document, value) {
+  const unit = unitFrom(document, value);
+  if (!unit) throw new Error(`cannot render unknown verify unit ${value}`);
+  return [
+    `APM VERIFY ORDER: ${unit.id}`,
+    `USER OBJECTIVE: ${document.header.MISSION}`,
+    `VERIFY UNIT: ${unit.title}`,
+    `VERIFIER ROLE: ${unit.fields.VERIFIER}`,
+    `CONTEXT: ${unit.fields["VERIFY INPUTS"]}`,
+    `ARTIFACTS: ${unit.fields.OUTPUT}`,
+    `INSPECTION: ${unit.fields.INSPECTION}`,
+    `PROOF: ${unit.fields.PROOF}`,
+    `CONTEXT LIMIT: ${unit.fields["CONTEXT LIMIT"]}`,
+    `RETURN LIMIT: ${unit.fields["RETURN LIMIT"]}`,
+    "STOP WHEN: decisive checks finish or an evidenced blocker requires a manager decision",
+    "Return exactly one report using this schema:",
+    "APM VERIFY REPORT",
+    `UNIT: ${unit.id}`,
+    "VERDICT: PASS | FAIL | BLOCKED",
+    "CHECKS: checks actually performed",
+    "PROOF: decisive evidence",
+    "GAPS: missing or failed requirements, or none",
+    "CONTEXT ACCOUNT: context supplied, tool calls used, compaction or limit status",
+    "RISKS: residual risks or none",
+    "MANAGER DECISION: specific correction or acceptance decision needed",
+  ].join("\n");
 }
 
 export function parseWorkOrder(message) {

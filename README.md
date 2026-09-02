@@ -19,7 +19,16 @@ Install APM on the lead agent. For any tool-using execution task with worker age
 
 ### Runtime Enforcement
 
-APM carries [Claude Code lifecycle hooks](https://code.claude.com/docs/en/hooks) in the [skill frontmatter](https://code.claude.com/docs/en/skills). While APM is active, uncontracted Agent dispatch is denied, manager leaf tools are blocked, over-limit or malformed worker and verifier returns are sent back, and the manager cannot stop while `WHIPS.md` still computes unfinished duties.
+APM carries [Claude Code lifecycle hooks](https://code.claude.com/docs/en/hooks) in the [skill frontmatter](https://code.claude.com/docs/en/skills). While APM is active, manager leaf tools are blocked, over-limit or malformed worker and verifier returns are sent back, and the manager cannot stop while `WHIPS.md` still computes unfinished duties. Once the manager attempts an execution tool, it also cannot abandon the run before creating an active ledger.
+
+The manager does not hand-author the full worker envelope. It names the recorded unit:
+
+```text
+APM DISPATCH: W1
+APM VERIFY: W1
+```
+
+The hook expands that one line into the complete ledger-backed contract and return schema. If a smaller model submits a partial, duplicated, or drifted envelope, the hook replaces it with canonical `WHIPS.md` values instead of trapping the manager in a formatting retry loop. Unknown units and invalid lifecycle states remain blocked, and the rejection includes a complete valid example.
 
 The manager is the disciplined party. Leaf workers may use unlazy, but APM does not require every worker to install it. The manager keeps the blueprint, assigns bounded context, watches, replaces, commissions independent verification, and dispatches root integration without doing leaf work itself. Each runtime decision is recorded without prompt or worker-message content in `.apm/runtime.jsonl`, so an experiment can distinguish “the skill was present” from “the controls actually fired.”
 
@@ -35,7 +44,7 @@ For project-wide enforcement that catches direct work and substitute task-list t
 node scripts/install-hooks.mjs
 ```
 
-Description routing is probabilistic; only persistent hooks can force the manager to load APM before its first direct tool call. The installer writes project-local `.claude/settings.local.json` by default. Use `--uninstall` to remove only APM handlers, `--shared` for committed project settings, or `--global` for all local projects. The manager Stop gate is strict by default; use `--allow-emergency-release` only when a six-unchanged-block escape hatch is deliberately preferred. Persistent installation is explicit because it changes Claude Code runtime settings; the skill never installs it silently.
+Description routing is probabilistic; only persistent hooks can force the manager to load APM before its first direct tool call. The ledger may live at `<project>/WHIPS.md`, at a sibling `shared/WHIPS.md` in team harnesses, or at `APM_WHIPS_PATH`. The installer writes project-local `.claude/settings.local.json` by default. Use `--uninstall` to remove only APM handlers, `--shared` for committed project settings, or `--global` for all local projects. The manager Stop gate is strict by default; use `--allow-emergency-release` only when a six-unchanged-block escape hatch is deliberately preferred. Persistent installation is explicit because it changes Claude Code runtime settings; the skill never installs it silently.
 
 ## The Missing Layer
 
@@ -111,7 +120,7 @@ npm test
 npm run eval
 ```
 
-`npm test` also executes the runtime hooks as child processes with realistic Claude Code hook payloads. The current deterministic suite covers 32 routing, role-separation, dispatch, verification, bounded-return, stop, installer, ledger, and privacy-preserving telemetry cases.
+`npm test` also executes the runtime hooks as child processes with realistic Claude Code hook payloads. The current deterministic suite covers routing, role separation, shared-ledger discovery, canonical dispatch repair, verification, bounded returns, stop enforcement, installation, ledger validation, and privacy-preserving telemetry.
 
 The harness keeps model identifiers, raw outputs, rubric scores, usage, and cost when available in `evals/results/`. It measures what APM changes in a manager's response. It is not a disguised single-agent-versus-multi-agent benchmark. See [evals/README.md](evals/README.md).
 

@@ -7,12 +7,13 @@ import {
   appendFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { dirname, join, resolve } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import process from "node:process";
 import {
   evaluateWhips, loadWhips, parseVerifyOrder, parseVerifyReport,
-  parseWorkOrder, parseWorkReport, REPORT_FIELDS, VERIFY_REPORT_FIELDS,
+  parseWorkOrder, parseWorkReport, renderVerifyOrder, renderWorkOrder,
+  REPORT_FIELDS, VERIFY_REPORT_FIELDS,
 } from "./lib/whips.mjs";
 
 const MAX_BLOCKS = 6;
@@ -46,6 +47,14 @@ function denyTool(reason) {
       permissionDecisionReason: reason,
     },
   }));
+  process.exit(0);
+}
+
+function allowTool(updatedInput = null, additionalContext = null) {
+  const hookSpecificOutput = { hookEventName: "PreToolUse" };
+  if (updatedInput) hookSpecificOutput.updatedInput = updatedInput;
+  if (additionalContext) hookSpecificOutput.additionalContext = additionalContext;
+  console.log(JSON.stringify({ hookSpecificOutput }));
   process.exit(0);
 }
 
@@ -159,8 +168,77 @@ function contractDrift(order, unit, document, verify = false) {
   return bindings.filter(([field, expected]) => String(order.fields[field]).trim() !== String(expected).trim()).map(([field]) => field);
 }
 
+function explicitDispatchIntent(prompt) {
+  const match = String(prompt).match(/^\s*APM\s+(WORK\s+ORDER|VERIFY\s+ORDER|DISPATCH|VERIFY)\s*:\s*([A-Za-z][A-Za-z0-9._-]*)\s*$/im);
+  if (!match) return null;
+  return {
+    unit: match[2],
+    verify: /^VERIFY/i.test(match[1]),
+  };
+}
+
+function inferDispatchIntent(prompt, result) {
+  const explicit = explicitDispatchIntent(prompt);
+  if (explicit) return explicit;
+
+  const eligible = result.document.units.filter((unit) => ["READY", "REWHIP", "VERIFYING"].includes(unit.state));
+  const referenced = eligible.filter((unit) => new RegExp(`(^|[^A-Za-z0-9._-])${unit.id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^A-Za-z0-9._-]|$)`, "i").test(String(prompt)));
+  const candidates = referenced.length === 1 ? referenced : eligible.length === 1 ? eligible : [];
+  if (candidates.length !== 1) return null;
+  return { unit: candidates[0].id, verify: candidates[0].state === "VERIFYING" };
+}
+
+function dispatchHelp(result, preferred = null) {
+  const eligible = result.document.units.filter((unit) => ["READY", "REWHIP", "VERIFYING"].includes(unit.state));
+  const unit = preferred || eligible[0];
+  if (!unit) return "No producer or verifier unit is dispatchable. Run whips-check and resolve the next ledger duty.";
+  const verify = unit.state === "VERIFYING";
+  const shorthand = verify ? `APM VERIFY: ${unit.id}` : `APM DISPATCH: ${unit.id}`;
+  const example = verify ? renderVerifyOrder(result.document, unit) : renderWorkOrder(result.document, unit);
+  return `Retry with the one-line prompt ${JSON.stringify(shorthand)}; the hook expands it from WHIPS.md. Exact canonical envelope:\n${example}`;
+}
+
+function prepareDispatch(result, prompt) {
+  const intent = inferDispatchIntent(prompt, result);
+  if (!intent) {
+    return { errors: ["cannot determine one ledger unit and dispatch role"], help: dispatchHelp(result) };
+  }
+
+  const unit = result.document.units.find((item) => item.id === intent.unit);
+  if (!unit) return { errors: [`unknown unit ${intent.unit}`], help: dispatchHelp(result) };
+  const allowedStates = intent.verify ? ["VERIFYING"] : ["READY", "REWHIP"];
+  if (!allowedStates.includes(unit.state)) {
+    return {
+      errors: [`${unit.id} is ${unit.state}, not ${allowedStates.join(" or ")}`],
+      unit,
+      help: dispatchHelp(result, unit),
+    };
+  }
+
+  const order = intent.verify ? parseVerifyOrder(prompt) : parseWorkOrder(prompt);
+  const schema = intent.verify ? parseVerifyReturnSchema(prompt) : parseReturnSchema(prompt);
+  const repair = [...order.errors, ...schema.errors];
+  if (!order.errors.length) repair.push(...contractDrift(order, unit, result.document, intent.verify));
+  if (String(schema.fields.UNIT || "").trim() !== unit.id) repair.push("REPORT UNIT");
+  if (intent.verify) {
+    const verdicts = String(schema.fields.VERDICT || "").toUpperCase();
+    if (!["PASS", "FAIL", "BLOCKED"].every((verdict) => verdicts.includes(verdict))) repair.push("REPORT VERDICT");
+  } else {
+    const statuses = String(schema.fields.STATUS || "").toUpperCase();
+    if (!["COMPLETE", "BLOCKED", "PARTIAL"].every((status) => statuses.includes(status))) repair.push("REPORT STATUS");
+  }
+
+  return {
+    errors: [],
+    unit,
+    verify: intent.verify,
+    canonical: intent.verify ? renderVerifyOrder(result.document, unit) : renderWorkOrder(result.document, unit),
+    repair: [...new Set(repair)],
+  };
+}
+
 function preAgent(payload) {
-  const { root, result } = activeRuntime(payload);
+  const { root, loaded, result } = activeRuntime(payload);
   const deny = (code, reason, unit = null) => {
     recordEvent(payload, root, result, { action: "deny", code, unit });
     denyTool(reason);
@@ -169,54 +247,28 @@ function preAgent(payload) {
     deny("WORKER_NESTED_DELEGATION", "APM reporting hierarchy: a worker cannot create child agents or redefine the work tree. Return a blocker or manager decision request so the manager can allocate another bounded unit.");
   }
   if (!result.document.active) {
-    deny("NO_LEDGER", "APM manager gate: create an active WHIPS.md from the template before dispatching an Agent. Load APM, define the unit, norm, budget, watch cadence, proof, and return contract, then retry.");
+    markExecutionRequired(payload, root);
+    deny("NO_LEDGER", `APM manager gate: create an active WHIPS.md before dispatching an Agent. Accepted ledger paths: ${loaded.candidates.join(", ")}. Load APM, define the unit, norm, budget, watch cadence, proof, and return contract, then retry.`);
   }
   if (result.errors.length) {
-    deny("INVALID_LEDGER", `APM manager gate: WHIPS.md is invalid: ${result.errors.slice(0, 3).join("; ")}. Repair the ledger before dispatch.`);
+    deny("INVALID_LEDGER", `APM manager gate: WHIPS.md is invalid: ${result.errors.slice(0, 8).join("; ")}. Repair the ledger, then run node ${JSON.stringify(join(scriptDir, "whips-check.mjs"))} --status. A trailing 2>&1 is allowed.`);
   }
 
   const prompt = typeof payload.tool_input?.prompt === "string" ? payload.tool_input.prompt : "";
-  const verify = /^APM VERIFY ORDER:/m.test(prompt.split(/\r?\n/, 1)[0] || "");
-  const order = verify ? parseVerifyOrder(prompt) : parseWorkOrder(prompt);
-  if (order.errors.length) {
-    deny(verify ? "NO_VERIFY_ORDER" : "NO_WORK_ORDER", `APM manager gate: malformed ${verify ? "verify" : "work"} order: ${order.errors.slice(0, 5).join("; ")}. Dispatch the full non-empty envelope, not a role and task sentence.`, order.unit);
+  const prepared = prepareDispatch(result, prompt);
+  if (prepared.errors.length) {
+    deny("DISPATCH_INTENT_INVALID", `APM manager gate: ${prepared.errors.join("; ")}. ${prepared.help}`, prepared.unit?.id || null);
   }
 
-  const unit = result.document.units.find((item) => item.id === order.unit);
-  if (!unit) deny("UNKNOWN_UNIT", `APM manager gate: work unit ${order.unit} does not exist in the active ledger.`, order.unit);
-  const allowedStates = verify ? ["VERIFYING"] : ["READY", "REWHIP"];
-  if (!allowedStates.includes(unit.state)) {
-    deny("BAD_STATE", `APM manager gate: ${unit.id} is ${unit.state}, not ${allowedStates.join(" or ")}. Resolve dependencies and state before dispatch.`, unit.id);
-  }
-
-  const returnSchema = verify ? parseVerifyReturnSchema(prompt) : parseReturnSchema(prompt);
-  if (returnSchema.errors.length) {
-    deny("INCOMPLETE_ENVELOPE", `APM manager gate: ${unit.id} dispatch does not carry a complete return contract: ${returnSchema.errors.slice(0, 5).join("; ")}.`, unit.id);
-  }
-  const drift = contractDrift(order, unit, result.document, verify);
-  if (String(returnSchema.fields.UNIT).trim() !== unit.id) drift.push("REPORT UNIT");
-  if (verify) {
-    const verdicts = String(returnSchema.fields.VERDICT).toUpperCase();
-    if (!["PASS", "FAIL", "BLOCKED"].every((verdict) => verdicts.includes(verdict))) drift.push("REPORT VERDICT");
-  } else {
-    const statuses = String(returnSchema.fields.STATUS).toUpperCase();
-    if (!["COMPLETE", "BLOCKED", "PARTIAL"].every((status) => statuses.includes(status))) drift.push("REPORT STATUS");
-  }
-  if (drift.length) {
-    deny("CONTRACT_DRIFT", `APM manager gate: ${unit.id} prompt drifts from WHIPS.md in ${drift.join(", ")}. Carry the exact ledger values into the order.`, unit.id);
-  }
-
-  const code = verify ? "VERIFY_CONTRACT_OK" : "DISPATCH_CONTRACT_OK";
-  recordEvent(payload, root, result, { action: "allow", code, unit: unit.id });
-  console.log(JSON.stringify({
-    hookSpecificOutput: {
-      hookEventName: "PreToolUse",
-      additionalContext: verify
-        ? `APM dispatched independent verification for ${unit.id}. Record VERIFY DISPATCH and VERIFY REPORT, then accept only a PASS verdict with decisive evidence.`
-        : `APM dispatched ${unit.id}. After return, record DISPATCH and REPORT, compare ACCOUNT and CONTEXT ACCOUNT with the limits, and move only to VERIFYING before a fresh verifier is dispatched.`,
-    },
-  }));
-  process.exit(0);
+  const repaired = prepared.repair.length > 0;
+  const code = prepared.verify
+    ? repaired ? "VERIFY_CONTRACT_NORMALIZED" : "VERIFY_CONTRACT_OK"
+    : repaired ? "DISPATCH_CONTRACT_NORMALIZED" : "DISPATCH_CONTRACT_OK";
+  recordEvent(payload, root, result, { action: "allow", code, unit: prepared.unit.id, repaired_fields: prepared.repair.length });
+  const context = prepared.verify
+    ? `APM dispatched independent verification for ${prepared.unit.id}${repaired ? " with a ledger-normalized contract" : ""}. Record VERIFY DISPATCH and VERIFY REPORT, then accept only a PASS verdict with decisive evidence.`
+    : `APM dispatched ${prepared.unit.id}${repaired ? " with a ledger-normalized contract" : ""}. After return, record DISPATCH and REPORT, compare ACCOUNT and CONTEXT ACCOUNT with the limits, and move only to VERIFYING before a fresh verifier is dispatched.`;
+  allowTool(repaired ? { ...payload.tool_input, prompt: prepared.canonical } : null, context);
 }
 
 function subagentStop(payload) {
@@ -247,16 +299,49 @@ function subagentStop(payload) {
   allow(null);
 }
 
-function controlPath(root, value) {
+function controlPath(root, loaded, value) {
   if (typeof value !== "string" || !value.trim()) return false;
   const absolute = resolve(root, value);
-  const ledger = resolve(root, "WHIPS.md");
   const runtime = resolve(root, ".apm");
-  return absolute === ledger || absolute.startsWith(runtime + "\\") || absolute.startsWith(runtime + "/") || /[\\/]templates[\\/]WHIPS\.md$/i.test(absolute);
+  return loaded.candidates.includes(absolute) || absolute.startsWith(runtime + "\\") || absolute.startsWith(runtime + "/") || /[\\/]templates[\\/]WHIPS\.md$/i.test(absolute);
+}
+
+function tokenizeControlCommand(command) {
+  const tokens = [];
+  let current = "";
+  let quote = null;
+  for (const char of command) {
+    if (quote) {
+      if (char === quote) quote = null;
+      else current += char;
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+    } else if (/\s/.test(char)) {
+      if (current) { tokens.push(current); current = ""; }
+    } else if (/[;&|<>`$()]/.test(char)) {
+      return null;
+    } else {
+      current += char;
+    }
+  }
+  if (quote) return null;
+  if (current) tokens.push(current);
+  return tokens;
+}
+
+function isSafeControlCommand(command) {
+  const normalized = String(command).trim().replace(/\s+2>\s*&1\s*$/, "");
+  if (/[;&|<>`$()\r\n]/.test(normalized)) return false;
+  const tokens = tokenizeControlCommand(normalized);
+  if (!tokens || tokens.length < 2) return false;
+  if (!/^node(?:\.exe)?$/i.test(basename(tokens[0]))) return false;
+  return /^(?:whips-check|runtime-report)\.mjs$/i.test(basename(tokens[1]));
 }
 
 function preManagerTool(payload) {
-  const { root, result } = activeRuntime(payload);
+  const { root, loaded, result } = activeRuntime(payload);
   const tool = String(payload.tool_name || payload.toolName || "unknown");
   const input = payload.tool_input || {};
   if (isSubagent(payload)) {
@@ -264,6 +349,7 @@ function preManagerTool(payload) {
     allow(null);
   }
   const deny = (reason) => {
+    if (!result.document.active) markExecutionRequired(payload, root);
     recordEvent(payload, root, result, { action: "deny", code: "MANAGER_LEAF_TOOL_BLOCKED", unit: null, tool });
     const activation = result.document.active ? "" : " Load a2a-manager-agent-orchestration and create WHIPS.md before retrying.";
     denyTool(`APM context firewall: ${reason}${activation} The manager may update WHIPS.md, read bounded reports, run APM control scripts, and dispatch or supervise agents. Assign leaf execution to a worker.`);
@@ -274,27 +360,16 @@ function preManagerTool(payload) {
       deny(`${tool} cannot substitute for an active valid WHIPS.md; externalize the mission, system map, decisions, and units first.`);
     }
     const prompt = String(input.description || "");
-    const verify = prompt.trimStart().startsWith("APM VERIFY ORDER:");
-    const order = verify ? parseVerifyOrder(prompt) : parseWorkOrder(prompt);
-    const schema = verify ? parseVerifyReturnSchema(prompt) : parseReturnSchema(prompt);
-    const unit = result.document.units.find((item) => item.id === order.unit);
-    const allowedStates = verify ? ["VERIFYING"] : ["READY", "REWHIP"];
-    const errors = [...order.errors, ...schema.errors];
-    if (!unit) errors.push(`unknown unit ${order.unit || "missing"}`);
-    else {
-      if (!allowedStates.includes(unit.state)) errors.push(`${unit.id} is ${unit.state}, expected ${allowedStates.join(" or ")}`);
-      errors.push(...contractDrift(order, unit, result.document, verify));
-      if (String(schema.fields.UNIT).trim() !== unit.id) errors.push("REPORT UNIT");
-      if (verify) {
-        const verdicts = String(schema.fields.VERDICT).toUpperCase();
-        if (!["PASS", "FAIL", "BLOCKED"].every((verdict) => verdicts.includes(verdict))) errors.push("REPORT VERDICT");
-      } else {
-        const statuses = String(schema.fields.STATUS).toUpperCase();
-        if (!["COMPLETE", "BLOCKED", "PARTIAL"].every((status) => statuses.includes(status))) errors.push("REPORT STATUS");
-      }
+    const prepared = prepareDispatch(result, prompt);
+    if (prepared.errors.length) deny(`${tool} cannot identify a valid ledger dispatch: ${prepared.errors.join("; ")}. ${prepared.help}`);
+    const repaired = prepared.repair.length > 0;
+    const code = prepared.verify
+      ? repaired ? "TASK_VERIFY_CONTRACT_NORMALIZED" : "TASK_VERIFY_CONTRACT_OK"
+      : repaired ? "TASK_CONTRACT_NORMALIZED" : "TASK_CONTRACT_OK";
+    recordEvent(payload, root, result, { action: "allow", code, unit: prepared.unit.id, tool, repaired_fields: prepared.repair.length });
+    if (repaired) {
+      allowTool({ ...input, description: prepared.canonical }, `APM normalized TaskCreate for ${prepared.unit.id} from the active ledger.`);
     }
-    if (errors.length) deny(`${tool} must carry an exact ledger-backed ${verify ? "verification" : "producer"} contract: ${errors.slice(0, 4).join("; ")}.`);
-    recordEvent(payload, root, result, { action: "allow", code: verify ? "TASK_VERIFY_CONTRACT_OK" : "TASK_CONTRACT_OK", unit: unit.id, tool });
     allow(null);
   }
   if (/^(TaskGet|TaskUpdate|TaskList|TodoWrite|TeamCreate|TeamDelete)$/i.test(tool)) {
@@ -306,7 +381,7 @@ function preManagerTool(payload) {
   }
   if (/^(Read|Write|Edit|MultiEdit|NotebookEdit)$/i.test(tool)) {
     const paths = [input.file_path, input.path, input.notebook_path].filter((value) => typeof value === "string");
-    if (paths.length && paths.every((value) => controlPath(root, value))) {
+    if (paths.length && paths.every((value) => controlPath(root, loaded, value))) {
       recordEvent(payload, root, result, { action: "allow", code: "MANAGER_CONTROL_FILE_OK", unit: null, tool });
       allow(null);
     }
@@ -314,8 +389,7 @@ function preManagerTool(payload) {
   }
   if (/^(Bash|Shell)$/i.test(tool)) {
     const command = String(input.command || "");
-    const safeControl = /(whips-check|runtime-report)\.mjs/i.test(command) && !/[;&|<>`$()\r\n]/.test(command);
-    if (safeControl) {
+    if (isSafeControlCommand(command)) {
       recordEvent(payload, root, result, { action: "allow", code: "MANAGER_CONTROL_COMMAND_OK", unit: null, tool });
       allow(null);
     }
@@ -342,6 +416,22 @@ function writeState(file, state) {
   writeFileSync(file, JSON.stringify(state, null, 2) + "\n", "utf8");
 }
 
+function sessionKey(payload) {
+  return sha256(String(payload.session_id || payload.sessionId || "anonymous")).slice(0, 24);
+}
+
+function markExecutionRequired(payload, root) {
+  const file = statePath(root);
+  const key = sessionKey(payload);
+  const state = readState(file);
+  state.sessions[key] = {
+    ...(state.sessions[key] || {}),
+    executionRequired: true,
+    updatedAt: new Date().toISOString(),
+  };
+  writeState(file, state);
+}
+
 function clearSession(file, sessionKey) {
   if (!existsSync(file)) return;
   const state = readState(file);
@@ -352,15 +442,24 @@ function clearSession(file, sessionKey) {
 
 function stop(payload) {
   const { root, result } = activeRuntime(payload);
-  const sessionKey = sha256(String(payload.session_id || payload.sessionId || "anonymous")).slice(0, 24);
+  const key = sessionKey(payload);
   const file = statePath(root);
   if (!result.document.active) {
-    clearSession(file, sessionKey);
+    const state = readState(file);
+    if (state.sessions[key]?.executionRequired) {
+      const current = state.sessions[key];
+      current.bootstrapBlocks = (current.bootstrapBlocks || 0) + 1;
+      current.updatedAt = new Date().toISOString();
+      writeState(file, state);
+      recordEvent(payload, root, result, { action: "block", code: "BOOTSTRAP_LEDGER_REQUIRED", unit: null, blocks: current.bootstrapBlocks });
+      block("APM manager gate: an execution tool was attempted, so this session cannot finish without an active WHIPS.md. Create the ledger at the project root or sibling shared/WHIPS.md, then dispatch the recorded work. Do not replace execution with a failure narrative.");
+    }
+    clearSession(file, key);
     recordEvent(payload, root, result, { action: "allow", code: "NO_ACTIVE_LEDGER", unit: null });
     allow(null);
   }
   if (result.complete) {
-    clearSession(file, sessionKey);
+    clearSession(file, key);
     recordEvent(payload, root, result, { action: "allow", code: "MANAGER_COMPLETE", unit: "ROOT" });
     allow("APM manager gate: root and all required units have terminal, auditable dispositions.");
   }
@@ -368,11 +467,11 @@ function stop(payload) {
   const outstanding = [...result.errors.map((item) => `INVALID ${item}`), ...result.duties];
   const contentHash = sha256(result.document.text + "\0" + outstanding.join("\0")).slice(0, 24);
   const state = readState(file);
-  let current = state.sessions[sessionKey];
+  let current = state.sessions[key];
   if (!current || current.hash !== contentHash) current = { hash: contentHash, blocks: 0 };
   current.blocks += 1;
   current.updatedAt = new Date().toISOString();
-  state.sessions[sessionKey] = current;
+  state.sessions[key] = current;
   state.sessions = Object.fromEntries(Object.entries(state.sessions)
     .sort((a, b) => String(b[1].updatedAt).localeCompare(String(a[1].updatedAt))).slice(0, 64));
   writeState(file, state);

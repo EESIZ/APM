@@ -2,7 +2,7 @@
 
 `WHIPS.md` is the non-executing manager's durable control plane. It preserves the mission and whole-system map while disposable worker contexts absorb source code, logs, research, implementation, testing, verification, and integration.
 
-Create it before the first leaf action. Update it after every dispatch and bounded return. The manager may decide, assign, watch, correct, and accept; it may not become a worker.
+Create it before the first leaf action. Use `<project>/WHIPS.md`, a sibling `shared/WHIPS.md` in team harnesses, or set `APM_WHIPS_PATH`. Update it after every dispatch and bounded return. The manager may decide, assign, watch, correct, and accept; it may not become a worker.
 
 ```text
 W - Work Unit
@@ -102,7 +102,16 @@ It derives duties from the ledger:
 - `M-DECIDE`: accept `PASS` or correct, reassign, discard, or abandon.
 - `M-CORRECT`: execute a recorded `REWHIP` or ownership change.
 
-Claude Code hooks call the same logic before Agent dispatch, before manager leaf tools, when a subagent stops, and when the manager attempts to stop. With persistent enforcement installed, direct repository inspection, editing, shell work, and web research are denied to the main manager. `TaskCreate` is allowed only when its description carries an exact ledger-backed producer or verifier contract; task-list and team tools are secondary control surfaces and require an active valid `WHIPS.md`. Dispatched workers retain their leaf tools but cannot create an unrecorded child hierarchy.
+Claude Code hooks call the same logic before Agent dispatch, before manager leaf tools, when a subagent stops, and when the manager attempts to stop. With persistent enforcement installed, direct repository inspection, editing, shell work, and web research are denied to the main manager. Once an execution tool is attempted, `Stop` requires an active ledger instead of permitting a failure narrative.
+
+For dispatch, the manager should send only one of these prompts:
+
+```text
+APM DISPATCH: W1
+APM VERIFY: W1
+```
+
+The hook expands the shorthand into the complete producer or verifier envelope using this ledger. It also replaces incomplete, duplicated, or drifted fields with canonical ledger values. `TaskCreate` receives the same normalization. Unknown units and invalid states stay blocked, with an exact valid envelope included in the rejection. Task-list and team tools remain secondary control surfaces backed by an active valid ledger. Dispatched workers retain their leaf tools but cannot create an unrecorded child hierarchy.
 
 Hook decisions append to `.apm/runtime.jsonl` without prompt or report content. Summarize them with:
 

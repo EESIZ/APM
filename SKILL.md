@@ -80,10 +80,10 @@ APM applies completion discipline to the manager. Workers may use unlazy, but th
 
 The bundled runtime hooks enforce this discipline while the skill is active:
 
-1. `PreToolUse` denies an Agent dispatch without an active ledger and complete work-order/report envelope.
+1. `PreToolUse` denies an Agent dispatch without an active ledger, then expands a one-line `APM DISPATCH: <unit>` or `APM VERIFY: <unit>` request into the canonical work-order/report envelope stored in the ledger. Incomplete, duplicated, or drifted envelopes are replaced with ledger values instead of entering a formatting retry loop.
 2. `PreToolUse` denies manager use of leaf exploration and execution tools while allowing those tools inside dispatched workers; only WHIPS control files, APM status commands, and ledger-backed task/team controls remain directly available to the manager.
 3. `SubagentStop` sends a worker or verifier back when its final message is not an accountable bounded report.
-4. `Stop` prevents the manager from finishing while computed manager duties or invalid ledger state remain.
+4. `Stop` prevents the manager from finishing while computed manager duties or invalid ledger state remain. Once an execution tool has been attempted, the manager also cannot stop before creating an active ledger.
 
 Run `node "${CLAUDE_SKILL_DIR}/scripts/whips-check.mjs" --status` whenever the next manager action is unclear. Hook decisions are recorded without prompt or worker-message content in `.apm/runtime.jsonl`; summarize actual dispatch gates, corrected returns, manager stop blocks, and verified completion with `node "${CLAUDE_SKILL_DIR}/scripts/runtime-report.mjs" --json`. The event log proves that enforcement ran, but does not replace artifact proof.
 
@@ -107,7 +107,7 @@ Keep one writer for tightly coupled artifacts and serialize dependencies when ne
 
 ## Manager Context Constitution
 
-Before the first dispatch, externalize these durable fields in `WHIPS.md`:
+Before the first dispatch, externalize these durable fields in `WHIPS.md`. Use the project-root `WHIPS.md`, the sibling `shared/WHIPS.md` used by team harnesses, or an explicit `APM_WHIPS_PATH`:
 
 - `MISSION`: the user's actual desired outcome;
 - `NON-NEGOTIABLES`: constraints that may not drift;
@@ -167,7 +167,7 @@ Assign a contract, not a wish. Every contract states:
 - active watch cadence and recontact condition;
 - dependencies, budget, escalation condition, and stop condition.
 
-Embed the complete [Worker Dispatch Envelope](#worker-dispatch-envelope) in every worker prompt. Skills and manager context are not assumed to propagate into a child agent. The dispatch itself must carry the objective, boundaries, proof requirement, and report schema.
+Every child must receive the complete [Worker Dispatch Envelope](#worker-dispatch-envelope). Skills and manager context are not assumed to propagate into a child agent. With the runtime hook active, dispatch using only `APM DISPATCH: <unit id>`; the hook generates the complete prompt from the active ledger. Without hook support, render and send the full envelope manually.
 
 Use parallel dispatch only when dependencies are satisfied and write ownership is disjoint. Treat `OWNS` as coordination, not filesystem isolation or a security boundary.
 
@@ -248,10 +248,10 @@ Only the manager changes a unit to `VERIFIED`, and only after a different verifi
 
 1. Write the mission constitution: objective, non-negotiables, system map, accepted decisions, and context policy.
 2. Create `WHIPS.md` before any repository inspection or leaf action. Record producer, verifier, context limits, dependencies, ownership, proof, and both return contracts.
-3. For each `READY` unit, place the full work envelope in the producer prompt, record the call or session identity, then move it to `IN-FLIGHT`.
+3. For each `READY` unit, call the worker with `APM DISPATCH: <unit id>`. The hook expands the canonical envelope from `WHIPS.md`; record the call or session identity, then move it to `IN-FLIGHT`.
 4. Wait for and collect a bounded work report. Do not ingest the worker transcript or treat launch, activity, or confidence as acceptance evidence.
 5. Validate `ACCOUNT` and `CONTEXT ACCOUNT`. If required fields or evidence are missing, keep dependents blocked, record `REWHIP`, and send a corrective contract or replace the context.
-6. Move a conforming return to `VERIFYING`, then dispatch the recorded verifier with the verification envelope. The verifier must be different from the producer.
+6. Move a conforming return to `VERIFYING`, then call a fresh verifier with `APM VERIFY: <unit id>`. The hook expands the verification envelope, and the verifier must be different from the producer.
 7. Accept only a conforming `APM VERIFY REPORT` with `VERDICT: PASS`. Otherwise issue `REWHIP`, replace, reassign, discard, or abandon.
 8. Mark the unit `VERIFIED` only with bounded `PASS` evidence and a manager-owned reason.
 9. Unlock a dependent unit only after every id in `NEEDS` is `VERIFIED`.
@@ -260,7 +260,7 @@ Only the manager changes a unit to `VERIFIED`, and only after a different verifi
 
 ## Worker Dispatch Envelope
 
-Put this entire envelope in every child-agent prompt. Do not reduce it to a role name and a task sentence.
+This is the canonical envelope the runtime generates from `WHIPS.md`. Prefer the one-line `APM DISPATCH: <unit id>` interface so the manager does not hand-author or duplicate fields. If hooks are unavailable, put this entire envelope in the child-agent prompt.
 
 ```markdown
 APM WORK ORDER: <unit id>
@@ -300,7 +300,7 @@ RISKS: <residual risks or none>
 MANAGER DECISION: <specific decision needed or none>
 ```
 
-The runtime gate requires every order field to be non-empty and binds mission, handler, context, limits, replacement condition, ownership, output, inspection, proof, norm, budget, and watch cadence to `WHIPS.md`. A manager cannot weaken an approved contract while dispatching it.
+The runtime gate requires every order field to be non-empty and binds mission, handler, context, limits, replacement condition, ownership, output, inspection, proof, norm, budget, and watch cadence to `WHIPS.md`. Missing, duplicated, or weakened fields are replaced with the canonical ledger values. An unknown unit or invalid lifecycle state remains blocked, with a complete valid envelope included in the rejection.
 
 For runtimes that support an acknowledgement round, require the worker to confirm the unit id, owned scope, and blockers before changing artifacts. For one-shot worker tools, the final report remains mandatory.
 
@@ -329,7 +329,7 @@ Then dispatch the independent verifier. The manager reads its bounded report, no
 
 ## Independent Verification Envelope
 
-Put this complete envelope in a fresh verifier prompt after a producer return reaches `VERIFYING`:
+After a producer return reaches `VERIFYING`, prefer `APM VERIFY: <unit id>`. The runtime generates this complete envelope for a fresh verifier; use it manually only where hooks are unavailable:
 
 ```markdown
 APM VERIFY ORDER: <unit id>

@@ -13,19 +13,30 @@ const installer = join(root, "scripts", "install-hooks.mjs");
 const runtimeReporter = join(root, "scripts", "runtime-report.mjs");
 
 function sandbox() {
-  const dir = mkdtempSync(join(tmpdir(), "apm-runtime-test-"));
-  const state = join(dir, "hook-state");
+  const base = mkdtempSync(join(tmpdir(), "apm-runtime-test-"));
+  const dir = join(base, "repo");
+  const shared = join(base, "shared");
+  const state = join(base, "hook-state");
+  mkdirSync(dir, { recursive: true });
+  mkdirSync(shared, { recursive: true });
   mkdirSync(state, { recursive: true });
   return {
+    base,
     dir,
+    shared,
     state,
     write(relative, text) {
       const file = join(dir, relative);
       mkdirSync(dirname(file), { recursive: true });
       writeFileSync(file, text, "utf8");
     },
+    writeShared(relative, text) {
+      const file = join(shared, relative);
+      mkdirSync(dirname(file), { recursive: true });
+      writeFileSync(file, text, "utf8");
+    },
     read(relative) { return readFileSync(join(dir, relative), "utf8"); },
-    cleanup() { rmSync(dir, { recursive: true, force: true }); },
+    cleanup() { rmSync(base, { recursive: true, force: true }); },
   };
 }
 
@@ -224,7 +235,21 @@ test("PreToolUse blocks Agent dispatch without an active ledger", () => {
   } finally { s.cleanup(); }
 });
 
-test("PreToolUse blocks an incomplete worker contract", () => {
+test("PreToolUse gives the checker command for an invalid ledger", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger({ malformed: true }));
+    const result = run(hook, ["pre-agent"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_input: { prompt: "APM DISPATCH: W1" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const reason = json(result.out).hookSpecificOutput.permissionDecisionReason;
+    assert(reason.includes("whips-check.mjs") && reason.includes("2>&1"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("PreToolUse normalizes an incomplete worker contract from the ledger", () => {
   const s = sandbox();
   try {
     s.write("WHIPS.md", ledger());
@@ -233,7 +258,58 @@ test("PreToolUse blocks an incomplete worker contract", () => {
       input: JSON.stringify({ cwd: s.dir, tool_input: { prompt: workOrder({ complete: false }), description: workOrder() } }),
       env: { APM_HOOK_STATE_DIR: s.state },
     });
-    assert(json(result.out).hookSpecificOutput.permissionDecision === "deny", result.out + result.err);
+    const output = json(result.out).hookSpecificOutput;
+    assert(!output.permissionDecision, result.out + result.err);
+    assert(output.updatedInput.prompt.startsWith("APM WORK ORDER: W1\n"), result.out + result.err);
+    assert(output.updatedInput.prompt.includes("HANDLER ROLE: worker-1"), result.out + result.err);
+    assert(output.updatedInput.prompt.includes("CONTEXT: accepted plan v1"), result.out + result.err);
+    assert(output.updatedInput.prompt.includes("STATUS: COMPLETE | BLOCKED | PARTIAL"), result.out + result.err);
+    assert(output.updatedInput.prompt.match(/^USER OBJECTIVE:/gm).length === 1, result.out + result.err);
+    assert(output.additionalContext.includes("normalized"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("PreToolUse expands a one-line producer dispatch shorthand", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger());
+    const result = run(hook, ["pre-agent"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_input: { prompt: "APM DISPATCH: W1" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(result.out).hookSpecificOutput;
+    assert(!output.permissionDecision && output.updatedInput.prompt.includes("APM WORK REPORT"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("PreToolUse expands a one-line verifier dispatch shorthand", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger({ unit: "VERIFYING" }));
+    const result = run(hook, ["pre-agent"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_input: { prompt: "APM VERIFY: W1" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(result.out).hookSpecificOutput;
+    assert(!output.permissionDecision && output.updatedInput.prompt.startsWith("APM VERIFY ORDER: W1\n"), result.out + result.err);
+    assert(output.updatedInput.prompt.includes("APM VERIFY REPORT"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("PreToolUse rejection includes a canonical envelope for an unknown unit", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger());
+    const result = run(hook, ["pre-agent"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_input: { prompt: "APM DISPATCH: W9" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const reason = json(result.out).hookSpecificOutput.permissionDecisionReason;
+    assert(reason.includes("Exact canonical envelope:"), result.out + result.err);
+    assert(reason.includes("APM WORK ORDER: W1"), result.out + result.err);
   } finally { s.cleanup(); }
 });
 
@@ -350,11 +426,80 @@ test("Persistent context firewall bootstraps APM before the first direct tool ca
   try {
     const result = run(hook, ["pre-manager-tool"], {
       cwd: s.dir,
-      input: JSON.stringify({ cwd: s.dir, tool_name: "Read", tool_input: { file_path: "src/a.js" } }),
+      input: JSON.stringify({ cwd: s.dir, session_id: "bootstrap", tool_name: "Read", tool_input: { file_path: "src/a.js" } }),
       env: { APM_HOOK_STATE_DIR: s.state },
     });
     const output = json(result.out).hookSpecificOutput;
     assert(output.permissionDecision === "deny" && output.permissionDecisionReason.includes("Load a2a-manager-agent-orchestration"), result.out + result.err);
+
+    const stopped = run(hook, ["stop"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, session_id: "bootstrap" }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(json(stopped.out).decision === "block" && json(stopped.out).reason.includes("WHIPS.md"), stopped.out + stopped.err);
+  } finally { s.cleanup(); }
+});
+
+test("Context firewall allows and loads a sibling shared WHIPS ledger", () => {
+  const s = sandbox();
+  try {
+    const ledgerPath = join(s.shared, "WHIPS.md");
+    const write = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, session_id: "shared", tool_name: "Write", tool_input: { file_path: ledgerPath } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(write.code === 0 && write.out === "", write.out + write.err);
+
+    s.writeShared("WHIPS.md", ledger());
+    const dispatch = run(hook, ["pre-agent"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, session_id: "shared", tool_input: { prompt: "APM DISPATCH: W1" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(dispatch.out).hookSpecificOutput;
+    assert(!output.permissionDecision && output.updatedInput.prompt.startsWith("APM WORK ORDER: W1\n"), dispatch.out + dispatch.err);
+  } finally { s.cleanup(); }
+});
+
+test("Haiku-style bootstrap reaches dispatch without an envelope retry loop", () => {
+  const s = sandbox();
+  try {
+    const session = "haiku-deadlock-regression";
+    const blockedRead = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, session_id: session, tool_name: "Read", tool_input: { file_path: "src/a.js" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(json(blockedRead.out).hookSpecificOutput.permissionDecision === "deny", blockedRead.out + blockedRead.err);
+
+    const ledgerPath = join(s.shared, "WHIPS.md");
+    const allowedLedgerWrite = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, session_id: session, tool_name: "Write", tool_input: { file_path: ledgerPath } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(allowedLedgerWrite.code === 0 && allowedLedgerWrite.out === "", allowedLedgerWrite.out + allowedLedgerWrite.err);
+    s.writeShared("WHIPS.md", ledger());
+
+    const duplicated = `APM WORK ORDER: W1
+USER OBJECTIVE: finish one feature
+USER OBJECTIVE: finish one feature
+WORK UNIT: implement feature
+WORK UNIT: implement feature
+HANDLER ROLE: worker-1
+HANDLER ROLE: worker-1`;
+    const dispatch = run(hook, ["pre-agent"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, session_id: session, tool_input: { prompt: duplicated } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(dispatch.out).hookSpecificOutput;
+    assert(!output.permissionDecision && output.updatedInput.prompt.startsWith("APM WORK ORDER: W1\n"), dispatch.out + dispatch.err);
+    assert(output.updatedInput.prompt.match(/^USER OBJECTIVE:/gm).length === 1, dispatch.out + dispatch.err);
+    assert(output.updatedInput.prompt.match(/^WORK UNIT:/gm).length === 1, dispatch.out + dispatch.err);
+    assert(output.updatedInput.prompt.match(/^HANDLER ROLE:/gm).length === 1, dispatch.out + dispatch.err);
   } finally { s.cleanup(); }
 });
 
@@ -424,6 +569,20 @@ test("Context firewall allows a ledger-backed TaskCreate contract", () => {
   } finally { s.cleanup(); }
 });
 
+test("Context firewall normalizes a shorthand TaskCreate contract", () => {
+  const s = sandbox();
+  try {
+    s.write("WHIPS.md", ledger());
+    const result = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "TaskCreate", tool_input: { subject: "W1", description: "APM DISPATCH: W1" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    const output = json(result.out).hookSpecificOutput;
+    assert(!output.permissionDecision && output.updatedInput.description.startsWith("APM WORK ORDER: W1\n"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
 test("Task-list mirrors require and accept an active WHIPS ledger", () => {
   const s = sandbox();
   try {
@@ -455,6 +614,27 @@ test("Context firewall allows only bounded APM control commands", () => {
     });
     assert(allowed.code === 0 && allowed.out === "", allowed.out + allowed.err);
 
+    const redirected = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "Bash", tool_input: { command: "node scripts/whips-check.mjs --status 2>&1" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(redirected.code === 0 && redirected.out === "", redirected.out + redirected.err);
+
+    const disguised = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "Bash", tool_input: { command: "node scripts/evil.mjs whips-check.mjs" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(json(disguised.out).hookSpecificOutput.permissionDecision === "deny", disguised.out + disguised.err);
+
+    const expanded = run(hook, ["pre-manager-tool"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, tool_name: "Bash", tool_input: { command: "node scripts/whips-check.mjs --root \"$(whoami)\"" } }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(json(expanded.out).hookSpecificOutput.permissionDecision === "deny", expanded.out + expanded.err);
+
     const denied = run(hook, ["pre-manager-tool"], {
       cwd: s.dir,
       input: JSON.stringify({ cwd: s.dir, tool_name: "Bash", tool_input: { command: "node scripts/whips-check.mjs --status; Get-Content src/a.js" } }),
@@ -477,7 +657,7 @@ test("SubagentStop rejects a report marker hidden behind narrative", () => {
   } finally { s.cleanup(); }
 });
 
-test("PreToolUse rejects a contract value weakened after ledger approval", () => {
+test("PreToolUse restores a contract value weakened after ledger approval", () => {
   const s = sandbox();
   try {
     s.write("WHIPS.md", ledger());
@@ -487,11 +667,12 @@ test("PreToolUse rejects a contract value weakened after ledger approval", () =>
       env: { APM_HOOK_STATE_DIR: s.state },
     });
     const output = json(result.out).hookSpecificOutput;
-    assert(output.permissionDecision === "deny" && output.permissionDecisionReason.includes("BUDGET"), result.out + result.err);
+    assert(!output.permissionDecision && output.updatedInput.prompt.includes("BUDGET: 10 minutes"), result.out + result.err);
+    assert(!output.updatedInput.prompt.includes("BUDGET: unlimited"), result.out + result.err);
   } finally { s.cleanup(); }
 });
 
-test("PreToolUse binds the return schema to the dispatched unit", () => {
+test("PreToolUse restores the return schema to the dispatched unit", () => {
   const s = sandbox();
   try {
     s.write("WHIPS.md", ledger());
@@ -501,7 +682,8 @@ test("PreToolUse binds the return schema to the dispatched unit", () => {
       env: { APM_HOOK_STATE_DIR: s.state },
     });
     const output = json(result.out).hookSpecificOutput;
-    assert(output.permissionDecision === "deny" && output.permissionDecisionReason.includes("REPORT UNIT"), result.out + result.err);
+    assert(!output.permissionDecision && output.updatedInput.prompt.includes("UNIT: W1"), result.out + result.err);
+    assert(!output.updatedInput.prompt.includes("UNIT: W2"), result.out + result.err);
   } finally { s.cleanup(); }
 });
 
@@ -531,6 +713,18 @@ test("Stop allows only a fully settled ledger", () => {
     });
     const output = json(result.out);
     assert(!output.decision && output.systemMessage.includes("terminal"), result.out + result.err);
+  } finally { s.cleanup(); }
+});
+
+test("Stop allows an answer-only session that never attempted execution", () => {
+  const s = sandbox();
+  try {
+    const result = run(hook, ["stop"], {
+      cwd: s.dir,
+      input: JSON.stringify({ cwd: s.dir, session_id: "answer-only" }),
+      env: { APM_HOOK_STATE_DIR: s.state },
+    });
+    assert(result.code === 0 && result.out === "", result.out + result.err);
   } finally { s.cleanup(); }
 });
 
@@ -624,7 +818,7 @@ test("runtime event log proves manager interventions without storing prompts", (
 
     run(hook, ["pre-agent"], {
       cwd: s.dir,
-      input: JSON.stringify({ cwd: s.dir, session_id: "telemetry", hook_event_name: "PreToolUse", tool_input: { prompt: workOrder() } }),
+      input: JSON.stringify({ cwd: s.dir, session_id: "telemetry", hook_event_name: "PreToolUse", tool_input: { prompt: "APM DISPATCH: W1" } }),
       env,
     });
     run(hook, ["subagent-stop"], {
@@ -644,8 +838,10 @@ test("runtime event log proves manager interventions without storing prompts", (
     const output = json(summary.out);
     assert(summary.code === 0 && output.events === 3, summary.out + summary.err);
     assert(output.accepted_dispatches === 1, JSON.stringify(output));
+    assert(output.normalized_dispatches === 1, JSON.stringify(output));
+    assert(output.contract_normalizations === 1, JSON.stringify(output));
     assert(output.corrected_worker_returns === 1, JSON.stringify(output));
-    assert(output.manager_stop_blocks === 1 && output.manager_interventions === 2, JSON.stringify(output));
+    assert(output.manager_stop_blocks === 1 && output.manager_interventions === 3, JSON.stringify(output));
   } finally { s.cleanup(); }
 });
 
